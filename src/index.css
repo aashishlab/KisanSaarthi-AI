@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 150 10% 97%;
+    --background-end: 152 68% 96%;
+    --foreground: 220 13% 18%;
+
+    --card: 0 0% 100% / 0.6;
+    --card-foreground: 220 13% 18%;
+
+    --popover: 0 0% 100% / 0.8;
+    --popover-foreground: 220 13% 18%;
+
+    --primary: 122 46% 33%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 122 38% 57%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 150 10% 93%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 152 68% 96%;
+    --accent-foreground: 122 46% 33%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 100% / 0.4;
+    --input: 220 13% 91%;
+    --ring: 122 46% 33%;
+
+    --radius: 16px;
+
+    --sidebar-background: 0 0% 100% / 0.6;
+    --sidebar-foreground: 220 13% 18%;
+    --sidebar-primary: 122 46% 33%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 152 68% 96%;
+    --sidebar-accent-foreground: 220 13% 18%;
+    --sidebar-border: 0 0% 100% / 0.4;
+    --sidebar-ring: 122 46% 33%;
+
+    /* Queue status */
+    --queue-low: 160 84% 39%;
+    --queue-medium: 38 92% 50%;
+    --queue-high: 0 72% 51%;
+
+    /* Glass */
+    --glass-bg: 0 0% 100% / 0.6;
+    --glass-border: 0 0% 100% / 0.4;
+    --glass-strong: 0 0% 100% / 0.8;
+
+    /* Fonts */
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-ui: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply text-foreground;
+    font-family: var(--font-ui);
+    font-weight: 400;
+    background: linear-gradient(180deg, hsl(150 10% 97%) 0%, hsl(152 68% 96%) 100%);
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .font-ui {
+    font-family: var(--font-ui);
+  }
+  .glass {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+  }
+  .glass-strong {
+    background: hsl(var(--glass-strong));
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid hsl(var(--glass-border));
+  }
+  .bg-dotted {
+    background-image: radial-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .bg-grid {
+    background-image:
+      linear-gradient(hsl(var(--foreground) / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+}
