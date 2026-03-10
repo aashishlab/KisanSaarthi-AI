@@ -1,73 +1,172 @@
-# Welcome to your Lovable project
+# 🌾 KisanSaarthi AI
 
-## Project info
+**KisanSaarthi AI** is an intelligent agriculture logistics platform designed to help farmers plan crop deliveries and avoid long waiting queues at agro-industrial hubs such as sugar mills, dairy plants, and food processing centers.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+The platform uses **AI-powered scheduling and real-time hub insights** to recommend the best arrival times and locations for farmers, improving efficiency and reducing congestion.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🚜 Problem Statement
 
-**Use Lovable**
+Farmers often face long waiting queues when delivering crops to agro-industrial hubs like:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+* Sugar mills
+* Dairy processing plants
+* APMC markets
+* Food processing units
 
-Changes made via Lovable will be committed automatically to this repo.
+These delays cause:
 
-**Use your preferred IDE**
+* Time loss
+* Increased transportation cost
+* Crop spoilage risks
+* Operational inefficiency at hubs
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 💡 Solution
 
-Follow these steps:
+KisanSaarthi AI provides a **smart delivery planning system** that helps farmers:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+* Discover nearby agro hubs
+* Check real-time queue status
+* Get AI-powered hub recommendations
+* Schedule arrival slots
+* Avoid congestion and delays
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## ✨ Key Features
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 🌍 Smart Hub Discovery
+
+Farmers can explore nearby agricultural processing hubs and industries.
+
+### 🤖 AI-Based Hub Recommendation
+
+The platform suggests the best hub based on:
+
+* Distance
+* Queue congestion
+* Estimated waiting time
+
+### ⏱ Queue Monitoring
+
+Real-time insights into hub congestion and waiting times.
+
+### 📊 Smart Logistics Dashboard
+
+A modern dashboard showing:
+
+* Nearby hubs
+* Waiting vehicles
+* Estimated processing time
+* Recommended arrival slots
+
+### 🏭 Multi-Industry Support
+
+The platform supports different agricultural sectors:
+
+* Sugar mills
+* Dairy plants
+* Food processing industries
+* Fruit & vegetable markets
+* APMC mandis
+
+---
+
+## 🖥 Tech Stack
+
+### Frontend
+
+* React
+* TypeScript
+* Tailwind CSS
+* shadcn/ui components
+* Vite
+
+### Design
+
+* Glassmorphism UI
+* Modern SaaS dashboard layout
+* Responsive design
+* Animated backgrounds and micro-interactions
+
+### Tools
+
+* Git & GitHub
+* Lovable AI (UI generation)
+* Cursor AI (code generation)
+
+---
+
+## 📂 Project Structure
+
+```
+KisanSaarthi-AI
+│
+├── src
+│   ├── components
+│   ├── pages
+│   ├── assets
+│   └── App.tsx
+│
+├── public
+├── package.json
+├── tailwind.config.ts
+└── README.md
+```
+
+---
+
+## ⚙️ Installation
+
+Clone the repository:
+
+```
+git clone https://github.com/aashishlab/KisanSaarthi-AI.git
+```
+
+Navigate into the project:
+
+```
+cd KisanSaarthi-AI
+```
+
+Install dependencies:
+
+```
+npm install
+```
+
+Run the development server:
+
+```
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open in browser:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+http://localhost:5173
+```
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🎯 Future Enhancements
 
-## What technologies are used for this project?
+* Real-time IoT-based queue tracking
+* AI demand forecasting for agro hubs
+* Farmer mobile application
+* Truck driver coordination system
+* Government mandi integration
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
-## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## 📜 License
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project is created for educational and hackathon purposes.
