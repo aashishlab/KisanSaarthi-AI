@@ -31,9 +31,11 @@ const Navbar = () => {
           <button className="p-2.5 rounded-xl hover:bg-muted transition-colors duration-200">
             <User className="h-5 w-5 text-muted-foreground" />
           </button>
-          <Button className="font-ui font-semibold text-sm rounded-xl px-5 h-10 shadow-md shadow-primary/20">
-            Farmer Login
-          </Button>
+          <a href="/">
+            <Button variant="outline" className="font-ui font-semibold text-sm rounded-xl px-5 h-10 border-primary/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 ml-2">
+              Logout
+            </Button>
+          </a>
         </div>
       </div>
     </nav>

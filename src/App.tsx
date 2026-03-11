@@ -5,6 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import FactoryLogin from "./pages/FactoryLogin.tsx";
+import FactoryDashboard from "./pages/FactoryDashboard.tsx";
+import BookSlot from "./pages/BookSlot.tsx";
+import Gateway from "./pages/Gateway.tsx";
+import FarmerLogin from "./pages/FarmerLogin.tsx";
 
 const queryClient = new QueryClient();
 
@@ -15,7 +20,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Gateway />} />
+          <Route path="/farmer/login" element={<FarmerLogin />} />
+          <Route path="/farmer/dashboard" element={<Index />} />
+          <Route path="/factory/login" element={<FactoryLogin />} />
+          <Route path="/factory/dashboard" element={<FactoryDashboard />} />
+          <Route path="/farmer/book-slot" element={<BookSlot />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
