@@ -26,10 +26,6 @@ const Sidebar = () => (
         <ListTodo className="h-5 w-5" />
         Live Queue
       </a>
-      <a href="/book-slot" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors font-medium">
-        <Calendar className="h-5 w-5" />
-        Book Slots
-      </a>
       
       <div className="px-2 mt-8 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         Operations
