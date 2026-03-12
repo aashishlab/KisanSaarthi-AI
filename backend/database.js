@@ -17,13 +17,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
       arrival_slot TEXT NOT NULL,
       status TEXT DEFAULT 'Waiting'
     )`, (err) => {
-<<<<<<< HEAD
-      if (err) {
-        console.error('Error creating bookings table', err.message);
-      } else {
-        console.log('Bookings table ready.');
-      }
-=======
       if (err) console.error('Error creating bookings table', err.message);
       else console.log('Bookings table ready.');
     });
