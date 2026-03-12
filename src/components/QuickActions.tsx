@@ -1,12 +1,14 @@
 import { CalendarCheck, ListOrdered, Map, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const actions = [
-  { label: "Book Arrival Slot", desc: "Reserve your time at any hub", icon: CalendarCheck },
-  { label: "Check Queue Status", desc: "Real-time queue data across all hubs", icon: ListOrdered },
-  { label: "View All Hubs", desc: "Browse the complete hub directory", icon: Map },
+  { label: "Book Arrival Slot", desc: "Reserve your time at any hub", icon: CalendarCheck, path: "/farmer/book-slot" },
+  { label: "Check Queue Status", desc: "Real-time queue data across all hubs", icon: ListOrdered, path: "#" },
+  { label: "View All Hubs", desc: "Browse the complete hub directory", icon: Map, path: "#" },
 ];
 
 const QuickActions = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative bg-grid">
       <div className="container py-20">
@@ -21,6 +23,7 @@ const QuickActions = () => {
           {actions.map((action) => (
             <button
               key={action.label}
+              onClick={() => action.path !== "#" && navigate(action.path)}
               className="group glass rounded-2xl p-8 text-left hover:shadow-xl hover:shadow-primary/10 hover:scale-[1.03] transition-all duration-300"
             >
               <div className="p-3 bg-primary/10 rounded-xl w-fit mb-5 group-hover:bg-primary/20 transition-colors duration-200">
@@ -38,3 +41,4 @@ const QuickActions = () => {
 };
 
 export default QuickActions;
+
