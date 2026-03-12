@@ -18,9 +18,63 @@ export interface QueueData {
   queue: Booking[];
 }
 
+export interface RequestsData {
+  requests: Booking[];
+  total: number;
+}
+
 export const fetchQueue = async (): Promise<QueueData> => {
   const res = await fetch(`${API_URL}/queue`);
   if (!res.ok) throw new Error('Failed to fetch queue');
+  return res.json();
+};
+
+export const fetchRequests = async (): Promise<RequestsData> => {
+  const res = await fetch(`${API_URL}/requests`);
+  if (!res.ok) throw new Error('Failed to fetch requests');
+  return res.json();
+};
+
+export const fetchPendingCount = async (): Promise<{ count: number }> => {
+  const res = await fetch(`${API_URL}/pending-count`);
+  if (!res.ok) throw new Error('Failed to fetch pending count');
+  return res.json();
+};
+
+export const acceptRequest = async (id: number) => {
+  const res = await fetch(`${API_URL}/accept-request/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to accept request');
+  }
+  return res.json();
+};
+
+export const rejectRequest = async (id: number) => {
+  const res = await fetch(`${API_URL}/reject-request/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to reject request');
+  }
+  return res.json();
+};
+
+export const assignSlot = async (id: number, arrival_slot: string) => {
+  const res = await fetch(`${API_URL}/assign-slot/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ arrival_slot })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to assign slot');
+  }
   return res.json();
 };
 

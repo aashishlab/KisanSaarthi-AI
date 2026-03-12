@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import FactoryLogin from "./pages/FactoryLogin.tsx";
 import FactoryDashboard from "./pages/FactoryDashboard.tsx";
+import FactoryRequests from "./pages/FactoryRequests.tsx";
 import BookSlot from "./pages/BookSlot.tsx";
 import Gateway from "./pages/Gateway.tsx";
 import FarmerLogin from "./pages/FarmerLogin.tsx";
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/farmer/dashboard" element={<Index />} />
           <Route path="/factory/login" element={<FactoryLogin />} />
           <Route path="/factory/dashboard" element={<FactoryDashboard />} />
+          <Route path="/factory/requests" element={<FactoryRequests />} />
           <Route path="/farmer/book-slot" element={<BookSlot />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
