@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Bell, User, Factory, Truck, Activity, AlertTriangle, Clock, LayoutDashboard, ListTodo, Calendar, FileText, Settings, LogOut, CheckCircle2, XCircle } from "lucide-react";
+import { Bell, Factory, Truck, Activity, AlertTriangle, Clock, LayoutDashboard, ListTodo, FileText, Settings, LogOut, CheckCircle2, XCircle, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { fetchQueue, updateBookingStatus, QueueData, Booking } from "@/lib/api";
+import { fetchQueue, updateBookingStatus, fetchPendingCount, QueueData, Booking } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const Sidebar = () => (
+const Sidebar = ({ pendingCount }: { pendingCount: number }) => (
   <div className="fixed inset-y-0 left-0 w-64 glass-strong border-r border-white/10 z-50 flex flex-col transition-transform duration-300 ease-in-out">
     <div className="flex items-center gap-2.5 p-6 border-b border-white/10">
       <div className="p-1.5 bg-primary rounded-xl">
@@ -26,9 +26,14 @@ const Sidebar = () => (
         <ListTodo className="h-5 w-5" />
         Live Queue
       </a>
-      <a href="/book-slot" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors font-medium">
-        <Calendar className="h-5 w-5" />
-        Book Slots
+      <a href="/factory/requests" className="flex items-center justify-between px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors font-medium">
+        <div className="flex items-center gap-3">
+          <ClipboardList className="h-5 w-5" />
+          Requests
+        </div>
+        {pendingCount > 0 && (
+          <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">{pendingCount}</span>
+        )}
       </a>
 
       <div className="px-2 mt-8 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -63,6 +68,14 @@ const FactoryDashboard = () => {
     refetchInterval: 5000 // Poll every 5s for live updates
   });
 
+  // Fetch pending requests count for sidebar badge
+  const { data: pendingCountData } = useQuery({
+    queryKey: ['pending-count'],
+    queryFn: fetchPendingCount,
+    refetchInterval: 5000
+  });
+  const pendingCount = pendingCountData?.count ?? 0;
+
   // Mutation to update booking status
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number, status: string }) => updateBookingStatus(id, status),
@@ -84,6 +97,7 @@ const FactoryDashboard = () => {
       case "Waiting": return "bg-blue-500/10 text-blue-500 border-blue-500/20";
       case "In Progress": return "bg-green-500/10 text-green-500 border-green-500/20";
       case "Delayed": return "bg-orange-500/10 text-orange-500 border-orange-500/20";
+      case "Approved": return "bg-blue-500/10 text-blue-500 border-blue-500/20";
       case "Mark Unloaded": return "bg-primary/10 text-primary border-primary/20";
       default: return "bg-muted text-muted-foreground border-border";
     }
@@ -101,8 +115,13 @@ const FactoryDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
+<<<<<<< HEAD
       <Sidebar />
 
+=======
+      <Sidebar pendingCount={pendingCount} />
+      
+>>>>>>> 1868fbe3a9fe963ca9726484faf2283c9327112b
       {/* Main Content wrapper */}
       <div className="flex-1 ml-64 pl-8 pr-8 pt-8 pb-12">
         {/* Top Header */}
