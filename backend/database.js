@@ -36,7 +36,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     )`, (err) => {
       if (err) console.error('Error creating requests table', err.message);
       else console.log('Requests table ready.');
->>>>>>> e070ce5c590af9a0f92e914482427d3d37ec3b91
+
     });
 
     db.run(`CREATE TABLE IF NOT EXISTS users (

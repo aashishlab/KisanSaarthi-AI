@@ -12,6 +12,8 @@ import BookSlot from "./pages/BookSlot.tsx";
 import Gateway from "./pages/Gateway.tsx";
 import FarmerLogin from "./pages/FarmerLogin.tsx";
 import RegisterFactory from "./pages/RegisterFactory.tsx";
+import CategoryHubs from "./pages/CategoryHubs.tsx";
+
 
 const queryClient = new QueryClient();
 
@@ -29,7 +31,9 @@ const App = () => (
           <Route path="/factory/dashboard" element={<FactoryDashboard />} />
           <Route path="/factory/requests" element={<FactoryRequests />} />
           <Route path="/farmer/book-slot" element={<BookSlot />} />
+          <Route path="/farmer/category/:category" element={<CategoryHubs />} />
           <Route path="/register-factory" element={<RegisterFactory />} />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

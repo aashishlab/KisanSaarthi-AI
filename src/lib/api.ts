@@ -23,11 +23,37 @@ export interface RequestsData {
   total: number;
 }
 
+export interface Hub {
+  id: number;
+  factory_id: number;
+  name: string;
+  category: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  capacity_per_slot: number;
+  queue_size: number;
+  created_at: string;
+}
+
 export const fetchQueue = async (): Promise<QueueData> => {
   const res = await fetch(`${API_URL}/queue`);
   if (!res.ok) throw new Error('Failed to fetch queue');
   return res.json();
 };
+
+export const fetchHubsByCategory = async (category: string): Promise<Hub[]> => {
+  const res = await fetch(`${API_URL}/hubs?category=${encodeURIComponent(category)}`);
+  if (!res.ok) throw new Error('Failed to fetch hubs by category');
+  return res.json();
+};
+
+export const fetchCategoryCounts = async (): Promise<Record<string, number>> => {
+  const res = await fetch(`${API_URL}/hubs/category-counts`);
+  if (!res.ok) throw new Error('Failed to fetch category counts');
+  return res.json();
+};
+
 
 export const fetchRequests = async (): Promise<RequestsData> => {
   const res = await fetch(`${API_URL}/requests`);
