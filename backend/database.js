@@ -16,9 +16,44 @@ const db = new sqlite3.Database(dbPath, (err) => {
       status TEXT DEFAULT 'Waiting'
     )`, (err) => {
       if (err) {
-        console.error('Error creating table', err.message);
+        console.error('Error creating bookings table', err.message);
       } else {
         console.log('Bookings table ready.');
+      }
+    });
+
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL,
+      phone TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      location TEXT
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating users table', err.message);
+      } else {
+        console.log('Users table ready.');
+      }
+    });
+
+    db.run(`CREATE TABLE IF NOT EXISTS hubs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      factory_id INTEGER,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      location TEXT NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      capacity_per_slot INTEGER NOT NULL,
+      queue_size INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (factory_id) REFERENCES users(id)
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating hubs table', err.message);
+      } else {
+        console.log('Hubs table ready.');
       }
     });
   }
