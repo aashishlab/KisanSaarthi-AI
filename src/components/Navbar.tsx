@@ -1,14 +1,13 @@
-import { Bell, User, Wheat } from "lucide-react";
+import { Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const Navbar = () => {
   return (
-    <nav className="fixed top-4 left-4 right-4 z-50 glass-strong rounded-2xl shadow-lg shadow-foreground/5">
+    <nav className="fixed top-4 left-4 right-4 z-50 glass-strong rounded-2xl shadow-lg shadow-foreground/5 dark:bg-background/80 dark:backdrop-blur-md">
       <div className="container flex items-center justify-between h-16 px-6">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-primary rounded-xl">
-            <Wheat className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src="/KisanSaarthi.jpeg" alt="KisanSaarthi Logo" className="h-10 w-auto p-1 object-contain rounded-xl mix-blend-multiply dark:mix-blend-normal dark:bg-white" />
           <span className="font-display text-xl font-bold tracking-tight">KisanSaarthi AI</span>
         </div>
 
@@ -25,6 +24,7 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <ModeToggle />
           <button className="p-2.5 rounded-xl hover:bg-muted transition-colors duration-200">
             <Bell className="h-5 w-5 text-muted-foreground" />
           </button>

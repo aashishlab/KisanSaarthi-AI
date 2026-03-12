@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Factory, Tractor, ArrowRight, UserPlus } from "lucide-react";
 import FloatingShapes from "@/components/FloatingShapes";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const Gateway = () => {
   const navigate = useNavigate();
@@ -10,6 +11,15 @@ const Gateway = () => {
     <div className="min-h-screen relative flex flex-col items-center justify-center overflow-hidden bg-background px-4">
       <FloatingShapes />
       
+      {/* Header bar for landing page */}
+      <div className="absolute top-4 left-4 right-4 z-50 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <img src="/KisanSaarthi.jpeg" alt="KisanSaarthi Logo" className="h-10 w-auto p-1 object-contain rounded-xl mix-blend-multiply dark:mix-blend-normal dark:bg-white" />
+          <span className="font-display text-xl font-bold tracking-tight hidden sm:inline-block">KisanSaarthi AI</span>
+        </div>
+        <ModeToggle />
+      </div>
+
       {/* Decorative background elements matching the main theme */}
       <div className="absolute top-0 right-0 -m-32 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-50 animate-float" />
       <div className="absolute bottom-0 left-0 -m-32 w-96 h-96 bg-accent/20 rounded-full blur-3xl opacity-50 animate-float-slow" />

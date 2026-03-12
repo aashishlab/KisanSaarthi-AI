@@ -60,6 +60,50 @@
     --font-display: 'Space Grotesk', system-ui, sans-serif;
     --font-ui: 'Inter', system-ui, sans-serif;
   }
+  .dark {
+    --background: 220 20% 10%;
+    --background-end: 220 25% 15%;
+    --foreground: 0 0% 95%;
+
+    --card: 220 20% 12% / 0.6;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 220 20% 12% / 0.8;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 122 46% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 122 38% 30%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 20% 15%;
+    --muted-foreground: 220 10% 60%;
+
+    --accent: 220 25% 18%;
+    --accent-foreground: 122 46% 50%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 100% / 0.1;
+    --input: 220 20% 20%;
+    --ring: 122 46% 40%;
+
+    --sidebar-background: 220 20% 12% / 0.8;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 122 46% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 100% / 0.1;
+    --sidebar-ring: 122 46% 40%;
+
+    /* Glass for dark mode */
+    --glass-bg: 220 20% 12% / 0.6;
+    --glass-border: 0 0% 100% / 0.1;
+    --glass-strong: 220 20% 10% / 0.8;
+  }
 }
 
 @layer base {
@@ -67,10 +111,9 @@
     @apply border-border;
   }
   body {
-    @apply text-foreground;
+    @apply bg-background text-foreground;
     font-family: var(--font-ui);
     font-weight: 400;
-    background: linear-gradient(180deg, hsl(150 10% 97%) 0%, hsl(152 68% 96%) 100%);
     min-height: 100vh;
   }
   h1, h2, h3, h4, h5, h6 {
