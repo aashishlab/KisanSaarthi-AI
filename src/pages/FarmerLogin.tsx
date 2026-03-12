@@ -4,16 +4,34 @@ import { Tractor, Lock, Phone, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import FloatingShapes from "@/components/FloatingShapes";
+import { login } from "@/lib/api";
+import { toast } from "sonner";
 
 const FarmerLogin = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phone && password) {
-      navigate("/farmer/dashboard");
+      setIsLoading(true);
+      try {
+        const res = await login({ phone, password, role: 'farmer' });
+        if (res.role === 'farmer') {
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify({ name: res.name, role: res.role }));
+          toast.success("Login successful!");
+          navigate("/farmer/dashboard");
+        } else {
+          toast.error("Invalid role for this login page.");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Login failed.");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -82,16 +100,17 @@ const FarmerLogin = () => {
 
             <Button 
               type="submit" 
+              disabled={isLoading}
               className="w-full h-12 rounded-xl font-display font-semibold text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all group"
             >
-              Enter Dashboard
+              {isLoading ? "Logging in..." : "Enter Dashboard"}
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </form>
           
           <div className="mt-8 pt-6 border-t border-white/10 text-center flex flex-col gap-2">
             <p className="font-ui text-sm text-muted-foreground">
-              Don't have an account? <a href="#" className="text-primary hover:underline">Register</a>
+              Don't have an account? <a onClick={() => navigate("/register-farmer")} className="text-primary hover:underline cursor-pointer">Register</a>
             </p>
           </div>
         </div>

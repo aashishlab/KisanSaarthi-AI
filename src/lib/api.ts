@@ -152,3 +152,45 @@ export const registerFactory = async (data: RegisterFactoryData) => {
   return res.json();
 };
 
+export interface RegisterFarmerData {
+  name: string;
+  phone: string;
+  password: string;
+  village: string;
+  vehicle_no: string;
+  crop_type: string;
+  preferred_hub: string;
+}
+
+export const registerFarmer = async (data: RegisterFarmerData) => {
+  const res = await fetch(`${API_URL}/farmer/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to register farmer');
+  }
+  return res.json();
+};
+
+export interface LoginData {
+  phone: string;
+  password: string;
+  role?: string;
+}
+
+export const login = async (data: LoginData) => {
+  const res = await fetch(`${API_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Login failed');
+  }
+  return res.json();
+};
+

@@ -12,6 +12,7 @@ import BookSlot from "./pages/BookSlot.tsx";
 import Gateway from "./pages/Gateway.tsx";
 import FarmerLogin from "./pages/FarmerLogin.tsx";
 import RegisterFactory from "./pages/RegisterFactory.tsx";
+import RegisterFarmer from "./pages/RegisterFarmer.tsx";
 import CategoryHubs from "./pages/CategoryHubs.tsx";
 
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/farmer/book-slot" element={<BookSlot />} />
           <Route path="/farmer/category/:category" element={<CategoryHubs />} />
           <Route path="/register-factory" element={<RegisterFactory />} />
+          <Route path="/register-farmer" element={<RegisterFarmer />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

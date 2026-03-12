@@ -73,6 +73,25 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.log('Hubs table ready.');
       }
     });
+
+    db.run(`CREATE TABLE IF NOT EXISTS farmers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      village TEXT NOT NULL,
+      vehicle_no TEXT NOT NULL UNIQUE,
+      crop_type TEXT NOT NULL,
+      preferred_hub TEXT NOT NULL,
+      role TEXT DEFAULT 'farmer',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating farmers table', err.message);
+      } else {
+        console.log('Farmers table ready.');
+      }
+    });
   }
 });
 
