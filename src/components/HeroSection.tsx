@@ -2,8 +2,10 @@ import { ArrowRight, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import GLSLHills from "./GLSLHills";
 import FloatingShapes from "./FloatingShapes";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-[92vh] flex items-center overflow-hidden">
       <GLSLHills />
@@ -36,7 +38,7 @@ const HeroSection = () => {
           </p>
           
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" className="font-ui font-semibold text-sm h-13 px-8 rounded-xl shadow-lg shadow-primary/25">
+            <Button size="lg" className="font-ui font-semibold text-sm h-13 px-8 rounded-xl shadow-lg shadow-primary/25" onClick={() => navigate("/farmer/book-slot")}>
               Book Arrival Slot
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
