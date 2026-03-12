@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Factory, Tractor, ArrowRight } from "lucide-react";
+import { Factory, Tractor, ArrowRight, UserPlus } from "lucide-react";
 import FloatingShapes from "@/components/FloatingShapes";
 import { Button } from "@/components/ui/button";
 
@@ -48,8 +48,7 @@ const Gateway = () => {
 
         {/* Factory Portal Card */}
         <div 
-           onClick={() => navigate("/factory/login")}
-           className="glass-strong rounded-3xl p-8 shadow-2xl animate-fade-in border border-white/10 relative overflow-hidden group cursor-pointer hover:border-blue-500/50 transition-all duration-300 hover:scale-[1.02]"
+           className="glass-strong rounded-3xl p-8 shadow-2xl animate-fade-in border border-white/10 relative overflow-hidden group hover:border-blue-500/50 transition-all duration-300 hover:scale-[1.02]"
            style={{ animationDelay: "100ms" }}
         >
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -58,12 +57,17 @@ const Gateway = () => {
                <Factory className="h-12 w-12 text-blue-500" />
              </div>
              <h2 className="font-display text-2xl font-bold tracking-tight text-foreground mb-2">Factory Operator</h2>
-             <p className="font-ui text-sm text-muted-foreground mb-8">
+             <p className="font-ui text-sm text-muted-foreground mb-6">
                Manage incoming vehicles, monitor live queues, and approve slot bookings efficiently.
              </p>
-             <Button variant="secondary" className="w-full rounded-xl font-display font-semibold transition-all">
-               Login as Operator <ArrowRight className="ml-2 h-4 w-4" />
-             </Button>
+             <div className="flex flex-col gap-3 w-full">
+               <Button variant="secondary" onClick={() => navigate("/factory/login")} className="w-full rounded-xl font-display font-semibold transition-all">
+                 Login <ArrowRight className="ml-2 h-4 w-4" />
+               </Button>
+               <Button variant="outline" onClick={() => navigate("/register-factory")} className="w-full rounded-xl font-display font-semibold border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-all">
+                 <UserPlus className="mr-2 h-4 w-4" /> Register Factory
+               </Button>
+             </div>
           </div>
         </div>
 

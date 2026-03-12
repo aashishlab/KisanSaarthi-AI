@@ -46,3 +46,29 @@ export const bookSlot = async (bookingData: { farmer_name: string; vehicle_no: s
   }
   return res.json();
 };
+
+export interface RegisterFactoryData {
+  factory_name: string;
+  phone: string;
+  password: string;
+  hub_name: string;
+  category: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  capacity_per_slot: number;
+}
+
+export const registerFactory = async (data: RegisterFactoryData) => {
+  const res = await fetch(`${API_URL}/factory/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to register factory');
+  }
+  return res.json();
+};
+
