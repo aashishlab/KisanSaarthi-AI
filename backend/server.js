@@ -1,6 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./database');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = 'your_jwt_secret_key'; // In a real app, use an environment variable
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -11,41 +15,149 @@ app.use(express.json());
 // --- Factory & Hub Routes ---
 
 // API Route: Register a new factory with a hub
-app.post('/api/factory/register', (req, res) => {
+app.post('/api/factory/register', async (req, res) => {
   const { factory_name, phone, password, hub_name, category, location, latitude, longitude, capacity_per_slot } = req.body;
 
   if (!factory_name || !phone || !password || !hub_name || !category || !location || latitude == null || longitude == null || !capacity_per_slot) {
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
-  // Step 1: Insert factory user
-  const userSql = `INSERT INTO users (name, role, phone, password, location) VALUES (?, 'factory', ?, ?, ?)`;
-  db.run(userSql, [factory_name, phone, password, location], function (err) {
-    if (err) {
-      if (err.message.includes('UNIQUE constraint failed')) {
-        return res.status(400).json({ error: 'A factory with this phone number already exists.' });
-      }
-      return res.status(500).json({ error: err.message });
-    }
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const factoryId = this.lastID;
-
-    // Step 2: Insert hub linked to factory
-    const hubSql = `INSERT INTO hubs (factory_id, name, category, location, latitude, longitude, capacity_per_slot) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    db.run(hubSql, [factoryId, hub_name, category, location, parseFloat(latitude), parseFloat(longitude), parseInt(capacity_per_slot)], function (err) {
+    // Step 1: Insert factory user
+    const userSql = `INSERT INTO users (name, role, phone, password, location) VALUES (?, 'factory', ?, ?, ?)`;
+    db.run(userSql, [factory_name, phone, hashedPassword, location], function (err) {
       if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          return res.status(400).json({ error: 'A factory with this phone number already exists.' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+
+      const factoryId = this.lastID;
+
+      // Step 2: Insert hub linked to factory
+      const hubSql = `INSERT INTO hubs (factory_id, name, category, location, latitude, longitude, capacity_per_slot) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      db.run(hubSql, [factoryId, hub_name, category, location, parseFloat(latitude), parseFloat(longitude), parseInt(capacity_per_slot)], function (err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        res.status(201).json({
+          message: 'Factory registered and hub created successfully',
+          data: {
+            factory_id: factoryId,
+            hub_id: this.lastID
+          }
+        });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error hashing password' });
+  }
+});
+
+// API Route: Register a new farmer
+app.post('/api/farmer/register', async (req, res) => {
+  const { name, phone, password, village, vehicle_no, crop_type, preferred_hub } = req.body;
+
+  if (!name || !phone || !password || !village || !vehicle_no || !crop_type || !preferred_hub) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const sql = `INSERT INTO farmers (name, phone, password, village, vehicle_no, crop_type, preferred_hub, role)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'farmer')`;
+    
+    db.run(sql, [name, phone, hashedPassword, village, vehicle_no, crop_type, preferred_hub], function (err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          if (err.message.includes('phone')) {
+            return res.status(400).json({ error: 'A farmer with this phone number already exists.' });
+          }
+          if (err.message.includes('vehicle_no')) {
+            return res.status(400).json({ error: 'This vehicle number is already registered.' });
+          }
+        }
         return res.status(500).json({ error: err.message });
       }
 
       res.status(201).json({
-        message: 'Factory registered and hub created successfully',
-        data: {
-          factory_id: factoryId,
-          hub_id: this.lastID
+        message: 'Farmer registered successfully',
+        data: { id: this.lastID, name, role: 'farmer' }
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error hashing password' });
+  }
+});
+
+// API Route: Unified Login
+app.post('/api/login', (req, res) => {
+  const { phone, password, role } = req.body;
+
+  if (!phone || !password) {
+    return res.status(400).json({ error: 'Phone and password are required.' });
+  }
+
+  // Helper to check password (bcrypt or plain text)
+  const checkPassword = async (inputPassword, storedPassword) => {
+    if (storedPassword.startsWith('$2b$')) {
+      return await bcrypt.compare(inputPassword, storedPassword);
+    }
+    return inputPassword === storedPassword;
+  };
+
+  const checkFarmer = () => {
+    return new Promise((resolve) => {
+      db.get(`SELECT * FROM farmers WHERE phone = ?`, [phone], async (err, farmer) => {
+        if (err || !farmer) return resolve(null);
+        const match = await checkPassword(password, farmer.password);
+        if (match) {
+          const token = jwt.sign({ id: farmer.id, role: 'farmer', name: farmer.name }, JWT_SECRET, { expiresIn: '24h' });
+          resolve({ message: 'Login successful', token, role: 'farmer', name: farmer.name });
+        } else {
+          resolve(null);
         }
       });
     });
-  });
+  };
+
+  const checkUser = () => {
+    return new Promise((resolve) => {
+      db.get(`SELECT * FROM users WHERE phone = ?`, [phone], async (err, user) => {
+        if (err || !user) return resolve(null);
+        const match = await checkPassword(password, user.password);
+        if (match) {
+          const token = jwt.sign({ id: user.id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
+          resolve({ message: 'Login successful', token, role: user.role, name: user.name });
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  };
+
+  const runLogin = async () => {
+    if (role === 'farmer') {
+      const farmerRes = await checkFarmer();
+      if (farmerRes) return res.json(farmerRes);
+    } else if (role === 'factory') {
+      const userRes = await checkUser();
+      if (userRes) return res.json(userRes);
+    } else {
+      // Unified login without role hint
+      const farmerRes = await checkFarmer();
+      if (farmerRes) return res.json(farmerRes);
+      const userRes = await checkUser();
+      if (userRes) return res.json(userRes);
+    }
+    return res.status(401).json({ error: 'Invalid credentials' });
+  };
+
+  runLogin();
 });
 
 // API Route: Create a new hub (from factory dashboard)

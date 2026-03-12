@@ -38,8 +38,7 @@ const Gateway = () => {
         
         {/* Farmer Portal Card */}
         <div 
-          onClick={() => navigate("/farmer/login")}
-          className="glass-strong rounded-3xl p-8 shadow-2xl animate-fade-in border border-white/10 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-all duration-300 hover:scale-[1.02]"
+          className="glass-strong rounded-3xl p-8 shadow-2xl animate-fade-in border border-white/10 relative overflow-hidden group hover:border-primary/50 transition-all duration-300 hover:scale-[1.02]"
         >
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex flex-col items-center text-center">
@@ -47,12 +46,17 @@ const Gateway = () => {
                <Tractor className="h-12 w-12 text-primary" />
              </div>
              <h2 className="font-display text-2xl font-bold tracking-tight text-foreground mb-2">Farmer Portal</h2>
-             <p className="font-ui text-sm text-muted-foreground mb-8">
+             <p className="font-ui text-sm text-muted-foreground mb-6">
                Book unloading slots, check queue status, and avoid long waiting times at processing hubs.
              </p>
-             <Button className="w-full rounded-xl font-display font-semibold group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-primary/25 transition-all">
-               Login as Farmer <ArrowRight className="ml-2 h-4 w-4" />
-             </Button>
+             <div className="flex flex-col gap-3 w-full">
+               <Button onClick={() => navigate("/farmer/login")} className="w-full rounded-xl font-display font-semibold transition-all">
+                 Login as Farmer <ArrowRight className="ml-2 h-4 w-4" />
+               </Button>
+               <Button variant="outline" onClick={() => navigate("/register-farmer")} className="w-full rounded-xl font-display font-semibold border-primary/30 text-primary hover:bg-primary/10 transition-all">
+                 <UserPlus className="mr-2 h-4 w-4" /> Register Farmer
+               </Button>
+             </div>
           </div>
         </div>
 
