@@ -116,7 +116,6 @@ const FactoryDashboard = () => {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar pendingCount={pendingCount} />
-      
       {/* Main Content wrapper */}
       <div className="flex-1 ml-64 pl-8 pr-8 pt-8 pb-12">
         {/* Top Header */}
