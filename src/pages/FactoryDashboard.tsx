@@ -3,7 +3,7 @@ import { Bell, Factory, Truck, Activity, AlertTriangle, Clock, LayoutDashboard, 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { fetchHubBookings, updateBookingStatusNew, fetchPendingCount, fetchFactoryHub, fetchSlots, createSlot, Booking, Slot } from "@/lib/api";
+import { fetchHubBookings, updateBookingStatusNew, fetchPendingCount, fetchFactoryHub, fetchSlots, updateHubSettings, Booking, Slot } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Sidebar = ({ pendingCount, onLogout }: { pendingCount: number, onLogout: () => void }) => (
@@ -112,15 +112,6 @@ const FactoryDashboard = () => {
   });
   const pendingCount = pendingCountData?.count ?? 0;
 
-  // Mutation to create a slot
-  const createSlotMutation = useMutation({
-    mutationFn: createSlot,
-    onSuccess: () => {
-      toast.success('Slot created successfully');
-      queryClient.invalidateQueries({ queryKey: ['hub-slots'] });
-    },
-    onError: (error: Error) => toast.error(error.message)
-  });
 
   // Mutation to update booking status
   const updateStatusMutation = useMutation({
@@ -148,14 +139,41 @@ const FactoryDashboard = () => {
     }
   };
 
-  const [newSlotTime, setNewSlotTime] = useState("");
-  const [newSlotCapacity, setNewSlotCapacity] = useState(10);
+  const [config, setConfig] = useState({
+    processing_capacity_per_hour: 40,
+    average_truck_load: 10,
+    working_start_time: "08:00",
+    working_end_time: "18:00",
+    break_start: "12:00",
+    break_end: "13:00"
+  });
 
-  const handleCreateSlot = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (hub) {
+      setConfig({
+        processing_capacity_per_hour: hub.processing_capacity_per_hour || 40,
+        average_truck_load: hub.average_truck_load || 10,
+        working_start_time: hub.working_start_time || "08:00",
+        working_end_time: hub.working_end_time || "18:00",
+        break_start: hub.break_start || "12:00",
+        break_end: hub.break_end || "13:00"
+      });
+    }
+  }, [hub]);
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (data: any) => updateHubSettings(hub_id!, data),
+    onSuccess: () => {
+      toast.success('Settings updated and slots generated');
+      queryClient.invalidateQueries({ queryKey: ['hub-slots'] });
+    },
+    onError: (error: Error) => toast.error(error.message)
+  });
+
+  const handleGenerateSlots = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hub_id) return;
-    createSlotMutation.mutate({ hub_id, slot_time: newSlotTime, capacity: newSlotCapacity });
-    setNewSlotTime("");
+    updateSettingsMutation.mutate(config);
   };
 
   if (loadingBookings || loadingSlots) {
@@ -280,6 +298,7 @@ const FactoryDashboard = () => {
                     <tr>
                       <th className="pb-3 font-semibold">TKN</th>
                       <th className="pb-3 font-semibold">Vehicle No.</th>
+                      <th className="pb-3 font-semibold">Load (Tons)</th>
                       <th className="pb-3 font-semibold">Farmer</th>
                       <th className="pb-3 font-semibold">Slot</th>
                       <th className="pb-3 font-semibold">Status</th>
@@ -296,6 +315,7 @@ const FactoryDashboard = () => {
                         <tr key={row.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                           <td className="py-4 font-bold text-primary">#{row.token_number}</td>
                           <td className="py-4 font-medium">{row.vehicle_no}</td>
+                          <td className="py-4 font-bold">{row.load_quantity}T</td>
                           <td className="py-4">{row.farmer_name}</td>
                           <td className="py-4 text-muted-foreground">{row.slot_time}</td>
                           <td className="py-4">
@@ -358,55 +378,103 @@ const FactoryDashboard = () => {
                 <Activity className="h-5 w-5 text-primary" /> Manage Hub Slots
               </h3>
               
-              <form onSubmit={handleCreateSlot} className="flex flex-wrap gap-4 mb-8 p-4 bg-white/5 rounded-xl border border-white/10">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-[10px] font-bold uppercase text-muted-foreground mb-1">Slot Time (e.g. 08:00 - 09:00)</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. 08:00 AM - 09:00 AM" 
-                    value={newSlotTime}
-                    onChange={(e) => setNewSlotTime(e.target.value)}
-                    required
-                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div className="w-32">
-                  <label className="block text-[10px] font-bold uppercase text-muted-foreground mb-1">Capacity</label>
-                  <input 
-                    type="number" 
-                    value={newSlotCapacity}
-                    onChange={(e) => setNewSlotCapacity(parseInt(e.target.value))}
-                    required
-                    min="1"
-                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button type="submit" className="h-10 px-6">Add Slot</Button>
+              <form onSubmit={handleGenerateSlots} className="space-y-6 mb-8 p-6 bg-white/5 rounded-2xl border border-white/10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Processing Capacity (Tons/Hr)</label>
+                    <input 
+                      type="number" 
+                      value={config.processing_capacity_per_hour}
+                      onChange={(e) => setConfig({ ...config, processing_capacity_per_hour: parseFloat(e.target.value) })}
+                      required
+                      className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Avg. Truck Load (Tons)</label>
+                    <input 
+                      type="number" 
+                      value={config.average_truck_load}
+                      onChange={(e) => setConfig({ ...config, average_truck_load: parseFloat(e.target.value) })}
+                      required
+                      className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Working Hours</label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="time" 
+                        value={config.working_start_time}
+                        onChange={(e) => setConfig({ ...config, working_start_time: e.target.value })}
+                        className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                      />
+                      <span className="text-muted-foreground">to</span>
+                      <input 
+                        type="time" 
+                        value={config.working_end_time}
+                        onChange={(e) => setConfig({ ...config, working_end_time: e.target.value })}
+                        className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Break Time</label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="time" 
+                        value={config.break_start}
+                        onChange={(e) => setConfig({ ...config, break_start: e.target.value })}
+                        className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                      />
+                      <span className="text-muted-foreground">to</span>
+                      <input 
+                        type="time" 
+                        value={config.break_end}
+                        onChange={(e) => setConfig({ ...config, break_end: e.target.value })}
+                        className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-end lg:col-span-2">
+                    <Button type="submit" disabled={updateSettingsMutation.isPending} className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+                      {updateSettingsMutation.isPending ? "Generating..." : "Generate AI Optimized Slots"}
+                    </Button>
+                  </div>
                 </div>
               </form>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {slots.map((slot) => {
-                  const percent = slot.capacity > 0 ? (slot.booked_count / slot.capacity) : 0;
+                  const availPercent = slot.capacity > 0 ? ((slot.capacity - slot.total_booked_load) / slot.capacity) : 0;
+                  
                   let color = "bg-green-500";
-                  if (percent >= 0.8) color = "bg-red-500";
-                  else if (percent >= 0.4) color = "bg-yellow-500";
+                  let statusText = "Available";
+                  if (availPercent <= 0) {
+                    color = "bg-red-500";
+                    statusText = "Full";
+                  } else if (availPercent < 0.3) {
+                    color = "bg-red-500";
+                    statusText = "Nearly Full";
+                  } else if (availPercent <= 0.6) {
+                    color = "bg-yellow-500";
+                    statusText = "Filling Fast";
+                  }
 
                   return (
-                    <div key={slot.id} className="p-4 bg-white/5 border border-white/5 rounded-xl">
+                    <div key={slot.id} className="p-4 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors group">
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-ui font-bold">{slot.slot_time}</span>
+                        <span className="font-ui font-bold group-hover:text-primary transition-colors">{slot.slot_time}</span>
                         <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">
-                          {slot.booked_count} / {slot.capacity} Booked
+                          {slot.total_booked_load} / {slot.capacity} Tons
                         </span>
                       </div>
                       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-1">
-                        <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${Math.min(percent * 100, 100)}%` }} />
+                        <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${Math.min((1 - availPercent) * 100, 100)}%` }} />
                       </div>
                       <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span>{slot.capacity - slot.booked_count} slots remaining</span>
-                        <span className="font-bold">{Math.round(percent * 100)}% Full</span>
+                        <span>{Math.max(0, slot.capacity - slot.total_booked_load)}T available</span>
+                        <span className="font-bold">{statusText}</span>
                       </div>
                     </div>
                   );
@@ -429,7 +497,7 @@ const FactoryDashboard = () => {
                 </div>
               </div>
               <p className="mt-6 text-sm text-muted-foreground font-ui">
-                Average processing time: 10 mins per truck
+                Avg. processing: {config.processing_capacity_per_hour} tons/hr
               </p>
             </div>
 

@@ -81,9 +81,9 @@ const CategoryHubs = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
               {hubs?.map((hub) => {
-                const waitTimeRaw = hub.capacity_per_slot > 0 
-                  ? (hub.queue_size / hub.capacity_per_slot) * 60 
-                  : 0;
+                const totalLoad = hub.total_load || 0;
+                const hourlyCapacity = hub.processing_capacity_per_hour || 1;
+                const waitTimeRaw = (totalLoad / hourlyCapacity) * 60;
                 
                 let waitTimeString = "0 min";
                 if (waitTimeRaw > 0) {
@@ -96,21 +96,23 @@ const CategoryHubs = () => {
                   }
                 }
 
-                const loadPercentage = hub.capacity_per_slot > 0 ? (hub.queue_size / hub.capacity_per_slot) : 0;
+                // Status logic based on load vs hourly capacity
+                // If total load is > 2x hourly capacity, it's crowded
+                const loadRatio = totalLoad / hourlyCapacity;
                 let statusColor = "bg-green-500";
                 let statusBg = "bg-green-500/10";
                 let statusText = "text-green-500";
                 let statusLabel = "Available";
                 
-                if (loadPercentage > 2) {
+                if (loadRatio > 2) {
                   statusColor = "bg-red-500";
                   statusBg = "bg-red-500/10";
                   statusText = "text-red-500";
                   statusLabel = "Crowded";
-                } else if (loadPercentage > 1) {
-                  statusColor = "bg-orange-500";
-                  statusBg = "bg-orange-500/10";
-                  statusText = "text-orange-500";
+                } else if (loadRatio > 1) {
+                  statusColor = "bg-yellow-500";
+                  statusBg = "bg-yellow-500/10";
+                  statusText = "text-yellow-500";
                   statusLabel = "Moderate";
                 }
 
@@ -136,8 +138,8 @@ const CategoryHubs = () => {
                       <div className="grid grid-cols-2 gap-4 mt-auto pt-8">
                         <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center justify-center text-center">
                           <Truck className="h-6 w-6 text-primary/70 mb-2" />
-                          <p className="font-display text-3xl font-bold">{hub.queue_size}</p>
-                          <p className="font-ui text-[10px] uppercase tracking-widest text-muted-foreground font-bold mt-1">Trucks</p>
+                          <p className="font-display text-3xl font-bold">{hub.total_load || 0}T</p>
+                          <p className="font-ui text-[10px] uppercase tracking-widest text-muted-foreground font-bold mt-1">Queue Load</p>
                         </div>
                         <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center justify-center text-center">
                           <Clock className="h-6 w-6 text-blue-400/70 mb-2" />

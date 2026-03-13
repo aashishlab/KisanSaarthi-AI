@@ -185,15 +185,19 @@ app.post('/api/hubs', (req, res) => {
 // API Route: Get all hubs (with optional category filter)
 app.get('/api/hubs', (req, res) => {
   const { category } = req.query;
-  let sql = `SELECT * FROM hubs`;
+  let sql = `
+    SELECT h.*, 
+           (SELECT SUM(load_quantity) FROM bookings b WHERE b.hub_id = h.id AND b.status IN ('Pending', 'Approved', 'In Progress')) as total_load
+    FROM hubs h
+  `;
   const params = [];
 
   if (category) {
-    sql += ` WHERE category = ?`;
+    sql += ` WHERE h.category = ?`;
     params.push(category);
   }
 
-  sql += ` ORDER BY created_at DESC`;
+  sql += ` ORDER BY h.created_at DESC`;
 
   db.all(sql, params, (err, rows) => {
     if (err) {
@@ -392,39 +396,73 @@ app.get('/api/slots', (req, res) => {
   });
 });
 
-// 3. POST /api/book-slot - Farmer books a real slot
+// 3. POST /api/book-slot - Farmer books arrival slot(s) with multi-slot support
 app.post('/api/book-slot', (req, res) => {
-  const { farmer_id, hub_id, slot_id, vehicle_number } = req.body;
-  if (!farmer_id || !hub_id || !slot_id || !vehicle_number) {
-    return res.status(400).json({ error: 'All fields are required.' });
+  const { farmer_id, hub_id, vehicle_number, total_load, slots } = req.body;
+  if (!farmer_id || !hub_id || !vehicle_number || !total_load || !slots || !slots.length) {
+    return res.status(400).json({ error: 'All fields including valid slots are required.' });
   }
 
-  // Check capacity first
-  db.get(`SELECT * FROM slots WHERE id = ?`, [slot_id], (err, slot) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!slot) return res.status(404).json({ error: 'Slot not found.' });
-    if (slot.booked_count >= slot.capacity) return res.status(400).json({ error: 'Slot is already full.' });
-
-    const newToken = slot.booked_count + 1;
-
-    // Update slot count and insert booking in a transaction-like way (sequential here)
-    db.serialize(() => {
-      db.run(`UPDATE slots SET booked_count = booked_count + 1 WHERE id = ?`, [slot_id]);
+  // Calculate estimated wait time based on queue load IN FRONT of them
+  const calcWaitTime = (callback) => {
+    db.get(`SELECT SUM(load_quantity) as total_load_ahead FROM bookings WHERE hub_id = ? AND status IN ('Pending', 'Approved', 'In Progress')`, [hub_id], (err, row) => {
+      let loadAhead = row?.total_load_ahead || 0;
       
-      const sql = `INSERT INTO bookings (farmer_id, hub_id, slot_id, vehicle_no, token_number, status)
-                   VALUES (?, ?, ?, ?, ?, 'Pending')`;
-      
-      db.run(sql, [farmer_id, hub_id, slot_id, vehicle_number, newToken], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+      db.get(`SELECT processing_capacity_per_hour FROM hubs WHERE id = ?`, [hub_id], (err, hub) => {
+        const capacity = hub?.processing_capacity_per_hour || 1;
+        const waitTimeRaw = (loadAhead / capacity) * 60;
         
-        // Also update hub queue size
+        let waitTimeString = "0 minutes";
+        if (waitTimeRaw >= 60) {
+          const hrs = Math.floor(waitTimeRaw / 60);
+          const mins = Math.round(waitTimeRaw % 60);
+          waitTimeString = mins > 0 ? `${hrs} hours ${mins} minutes` : `${hrs} hours`;
+        } else {
+          waitTimeString = `${Math.round(waitTimeRaw)} minutes`;
+        }
+        
+        callback(waitTimeString);
+      });
+    });
+  };
+
+
+  db.get(`SELECT COUNT(*) as count FROM bookings WHERE hub_id = ? AND status IN ('Pending', 'Approved', 'In Progress')`, [hub_id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const newToken = (row.count || 0) + 1;
+
+    db.serialize(() => {
+      // Create the main booking
+      const insertBooking = `INSERT INTO bookings (farmer_id, hub_id, slot_id, vehicle_no, load_quantity, token_number, status)
+                             VALUES (?, ?, ?, ?, ?, ?, 'Pending')`;
+      
+      // We use the first slot_id as the primary reference for the booking table, though it spans multiple
+      const primary_slot_id = slots[0].slot_id;
+
+      db.run(insertBooking, [farmer_id, hub_id, primary_slot_id, vehicle_number, total_load, newToken], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        const bookingId = this.lastID;
+
+        const slotUpdateStmt = db.prepare(`UPDATE slots SET booked_count = booked_count + 1, total_booked_load = total_booked_load + ? WHERE id = ?`);
+        const allocStmt = db.prepare(`INSERT INTO booking_slots (booking_id, slot_id, load_allocated) VALUES (?, ?, ?)`);
+
+        slots.forEach(a => {
+          slotUpdateStmt.run(a.allocated_load, a.slot_id);
+          allocStmt.run(bookingId, a.slot_id, a.allocated_load);
+        });
+
+        slotUpdateStmt.finalize();
+        allocStmt.finalize();
+
         db.run(`UPDATE hubs SET queue_size = queue_size + 1 WHERE id = ?`, [hub_id]);
 
-        res.status(201).json({
-          message: 'Booking successful',
-          token_number: newToken,
-          arrival_slot: slot.slot_time,
-          status: 'Pending'
+        calcWaitTime((estimated_wait_time) => {
+          res.status(201).json({
+            booking_id: bookingId,
+            token_number: newToken,
+            allocated_slots: slots.map(s => ({ slot_time: s.slot_time, load: s.allocated_load })),
+            estimated_wait_time
+          });
         });
       });
     });
@@ -437,10 +475,13 @@ app.get('/api/bookings', (req, res) => {
   if (!hub_id) return res.status(400).json({ error: 'Hub ID is required.' });
 
   const sql = `
-    SELECT b.*, f.name as farmer_name, f.phone as farmer_phone, f.crop_type, s.slot_time 
+    SELECT b.*, f.name as farmer_name, f.phone as farmer_phone, f.crop_type,
+           (SELECT GROUP_CONCAT(s.slot_time, ', ') 
+            FROM booking_slots bs 
+            JOIN slots s ON bs.slot_id = s.id 
+            WHERE bs.booking_id = b.id) as slot_time
     FROM bookings b
     JOIN farmers f ON b.farmer_id = f.id
-    LEFT JOIN slots s ON b.slot_id = s.id
     WHERE b.hub_id = ?
     ORDER BY b.created_at ASC
   `;
@@ -455,18 +496,32 @@ app.put('/api/update-booking-status', (req, res) => {
   const { id, status } = req.body;
   if (!id || !status) return res.status(400).json({ error: 'ID and status are required.' });
 
-  db.run(`UPDATE bookings SET status = ? WHERE id = ?`, [status, id], function (err) {
+  db.get(`SELECT * FROM bookings WHERE id = ?`, [id], (err, booking) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (this.changes === 0) return res.status(404).json({ error: 'Booking not found.' });
-    
-    // If completed, decrease hub queue size? The spec doesn't explicitly say but it makes sense.
-    if (status === 'Completed' || status === 'Rejected') {
-        db.get(`SELECT hub_id FROM bookings WHERE id = ?`, [id], (err, booking) => {
-            if (booking) db.run(`UPDATE hubs SET queue_size = CASE WHEN queue_size > 0 THEN queue_size - 1 ELSE 0 END WHERE id = ?`, [booking.hub_id]);
-        });
-    }
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
 
-    res.json({ message: 'Status updated successfully' });
+    db.run(`UPDATE bookings SET status = ? WHERE id = ?`, [status, id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      // If completed or rejected, free up the slots? 
+      // Actually, if rejected, we MUST free up slots.
+      if (status === 'Rejected') {
+        db.all(`SELECT * FROM booking_slots WHERE booking_id = ?`, [id], (err, allocs) => {
+          if (!err) {
+            db.serialize(() => {
+              const freeStmt = db.prepare(`UPDATE slots SET booked_count = booked_count - 1, total_booked_load = total_booked_load - ? WHERE id = ?`);
+              allocs.forEach(a => freeStmt.run(a.load_allocated, a.slot_id));
+              freeStmt.finalize();
+            });
+          }
+        });
+        db.run(`UPDATE hubs SET queue_size = CASE WHEN queue_size > 0 THEN queue_size - 1 ELSE 0 END WHERE id = ?`, [booking.hub_id]);
+      } else if (status === 'Completed') {
+        db.run(`UPDATE hubs SET queue_size = CASE WHEN queue_size > 0 THEN queue_size - 1 ELSE 0 END WHERE id = ?`, [booking.hub_id]);
+      }
+
+      res.json({ message: 'Status updated successfully' });
+    });
   });
 });
 
@@ -502,33 +557,126 @@ app.get('/api/farmer/bookings/:farmer_id', (req, res) => {
   const farmer_id = req.params.farmer_id;
   const sql = `
     SELECT b.*, h.name as hub_name, h.location as hub_location, h.category as hub_category, 
-           h.queue_size, h.capacity_per_slot, s.slot_time
+           h.queue_size, h.processing_capacity_per_hour, 
+           (SELECT GROUP_CONCAT(s.slot_time, ', ') 
+            FROM booking_slots bs 
+            JOIN slots s ON bs.slot_id = s.id 
+            WHERE bs.booking_id = b.id) as slot_time,
+           (SELECT SUM(load_quantity) FROM bookings WHERE hub_id = b.hub_id AND status IN ('Pending', 'Approved', 'In Progress')) as total_hub_load
     FROM bookings b
     JOIN hubs h ON b.hub_id = h.id
-    LEFT JOIN slots s ON b.slot_id = s.id
     WHERE b.farmer_id = ?
     ORDER BY b.created_at DESC
   `;
   db.all(sql, [farmer_id], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     
-    // Calculate waiting_time for each booking
+    // Calculate waiting_time for each booking: total_load / processing_capacity
     const processedRows = rows.map(row => {
       let waitTimeString = "0 min";
-      if (row.capacity_per_slot > 0) {
-        const waitTimeRaw = (row.queue_size / row.capacity_per_slot) * 60;
-        if (waitTimeRaw >= 60) {
-          const hrs = Math.floor(waitTimeRaw / 60);
-          const mins = Math.round(waitTimeRaw % 60);
-          waitTimeString = mins > 0 ? `${hrs}h ${mins}m` : `${hrs} hrs`;
-        } else {
-          waitTimeString = `${Math.round(waitTimeRaw)} min`;
-        }
+      const totalLoad = row.total_hub_load || 0;
+      const capacity = row.processing_capacity_per_hour || 1; // avoid div by 0
+
+      const waitTimeRaw = (totalLoad / capacity) * 60;
+      if (waitTimeRaw >= 60) {
+        const hrs = Math.floor(waitTimeRaw / 60);
+        const mins = Math.round(waitTimeRaw % 60);
+        waitTimeString = mins > 0 ? `${hrs}h ${mins}m` : `${hrs} hrs`;
+      } else {
+        waitTimeString = `${Math.max(0, Math.round(waitTimeRaw))} min`;
       }
       return { ...row, waiting_time: waitTimeString };
     });
     
     res.json(processedRows);
+  });
+});
+
+// API Route: Update hub settings and generate slots automatically
+app.put('/api/hubs/:hub_id/settings', (req, res) => {
+  const { hub_id } = req.params;
+  const { processing_capacity_per_hour, average_truck_load, working_start_time, working_end_time, break_start, break_end } = req.body;
+
+  if (!processing_capacity_per_hour || !average_truck_load || !working_start_time || !working_end_time) {
+    return res.status(400).json({ error: 'All configuration fields are required.' });
+  }
+
+  // Update hub settings
+  const updateHubSql = `
+    UPDATE hubs SET 
+      processing_capacity_per_hour = ?, 
+      average_truck_load = ?, 
+      working_start_time = ?, 
+      working_end_time = ?, 
+      break_start = ?, 
+      break_end = ?
+    WHERE id = ?
+  `;
+
+  db.run(updateHubSql, [
+    processing_capacity_per_hour, 
+    average_truck_load, 
+    working_start_time, 
+    working_end_time, 
+    break_start, 
+    break_end, 
+    hub_id
+  ], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    // Auto-generate slots
+    const capacity_numeric = parseFloat(processing_capacity_per_hour);
+    const load_numeric = parseFloat(average_truck_load);
+    const trucks_per_hour = capacity_numeric / load_numeric;
+    const slot_duration = Math.floor(60 / trucks_per_hour);
+    const capacity_per_slot = load_numeric;
+
+    // Helper to parse time string "HH:MM" to minutes
+    const toMins = (t) => {
+      if (!t) return -1;
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    // Helper to format minutes to "HH:MM AM/PM"
+    const fromMins = (m) => {
+      let hrs = Math.floor(m / 60);
+      const mins = m % 60;
+      const ampm = hrs >= 12 ? 'PM' : 'AM';
+      hrs = hrs % 12;
+      hrs = hrs ? hrs : 12;
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')} ${ampm}`;
+    };
+
+    const start = toMins(working_start_time);
+    const end = toMins(working_end_time);
+    const bStart = break_start ? toMins(break_start) : -1;
+    const bEnd = break_end ? toMins(break_end) : -1;
+
+    db.serialize(() => {
+      // Clear existing slots for this hub
+      db.run(`DELETE FROM slots WHERE hub_id = ?`, [hub_id]);
+
+      let current = start;
+      const stmt = db.prepare(`INSERT INTO slots (hub_id, slot_time, capacity, booked_count, total_booked_load) VALUES (?, ?, ?, 0, 0)`);
+      
+      while (current + slot_duration <= end) {
+        // Skip break hours
+        if (bStart !== -1 && bEnd !== -1) {
+          if (current >= bStart && current < bEnd) {
+            current = bEnd;
+            continue;
+          }
+        }
+
+        const slotLabel = `${fromMins(current)} - ${fromMins(current + slot_duration)}`;
+        stmt.run(hub_id, slotLabel, capacity_per_slot);
+        current += slot_duration;
+      }
+      
+      stmt.finalize();
+      res.json({ message: 'Settings updated and slots generated successfully.' });
+    });
   });
 });
 

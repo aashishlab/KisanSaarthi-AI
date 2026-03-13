@@ -27,9 +27,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
       farmer_id INTEGER NOT NULL,
       hub_id INTEGER NOT NULL,
       slot_id INTEGER,
-      vehicle_no TEXT NOT NULL,
+      vehicle_no TEXT,
+      load_quantity REAL DEFAULT 0,
       token_number INTEGER,
-      status TEXT DEFAULT 'Pending', -- Pending, Approved, In Progress, Completed
+      status TEXT DEFAULT 'Pending' CHECK(status IN ('Pending', 'Approved', 'In Progress', 'Completed', 'Rejected')),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (farmer_id) REFERENCES farmers(id),
       FOREIGN KEY (hub_id) REFERENCES hubs(id),
@@ -39,6 +40,19 @@ const db = new sqlite3.Database(dbPath, (err) => {
       else console.log('Bookings table ready.');
     });
 
+    // New booking_slots table for multi-slot support
+    db.run(`CREATE TABLE IF NOT EXISTS booking_slots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      booking_id INTEGER NOT NULL,
+      slot_id INTEGER NOT NULL,
+      load_allocated REAL NOT NULL,
+      FOREIGN KEY (booking_id) REFERENCES bookings(id),
+      FOREIGN KEY (slot_id) REFERENCES slots(id)
+    )`, (err) => {
+      if (err) console.error('Error creating booking_slots table', err.message);
+      else console.log('booking_slots table ready.');
+    });
+
     // New slots table defined by factory
     db.run(`CREATE TABLE IF NOT EXISTS slots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,6 +60,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
       slot_time TEXT NOT NULL,
       capacity INTEGER NOT NULL,
       booked_count INTEGER DEFAULT 0,
+      total_booked_load REAL DEFAULT 0,
       FOREIGN KEY (hub_id) REFERENCES hubs(id)
     )`, (err) => {
       if (err) console.error('Error creating slots table', err.message);
@@ -94,6 +109,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
       latitude REAL NOT NULL,
       longitude REAL NOT NULL,
       capacity_per_slot INTEGER NOT NULL,
+      processing_capacity_per_hour REAL DEFAULT 40,
+      average_truck_load REAL DEFAULT 10,
+      working_start_time TEXT DEFAULT '08:00',
+      working_end_time TEXT DEFAULT '18:00',
+      break_start TEXT DEFAULT '12:00',
+      break_end TEXT DEFAULT '13:00',
       queue_size INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (factory_id) REFERENCES users(id)
@@ -122,6 +143,33 @@ const db = new sqlite3.Database(dbPath, (err) => {
       } else {
         console.log('Farmers table ready.');
       }
+    });
+
+    // --- Dynamic Migrations (Add missing columns to existing tables) ---
+    const migrations = [
+      { table: 'hubs', column: 'processing_capacity_per_hour', type: 'REAL DEFAULT 40' },
+      { table: 'hubs', column: 'average_truck_load', type: 'REAL DEFAULT 10' },
+      { table: 'hubs', column: 'working_start_time', type: "TEXT DEFAULT '08:00'" },
+      { table: 'hubs', column: 'working_end_time', type: "TEXT DEFAULT '18:00'" },
+      { table: 'hubs', column: 'break_start', type: "TEXT DEFAULT '12:00'" },
+      { table: 'hubs', column: 'break_end', type: "TEXT DEFAULT '13:00'" },
+      { table: 'hubs', column: 'capacity_per_slot', type: "REAL DEFAULT 10" },
+      { table: 'slots', column: 'total_booked_load', type: 'REAL DEFAULT 0' },
+      { table: 'bookings', column: 'load_quantity', type: 'REAL DEFAULT 0' }
+    ];
+
+    migrations.forEach(m => {
+      db.all(`PRAGMA table_info(${m.table})`, [], (err, rows) => {
+        if (!err && rows) {
+          const exists = rows.some(r => r.name === m.column);
+          if (!exists) {
+            db.run(`ALTER TABLE ${m.table} ADD COLUMN ${m.column} ${m.type}`, (err) => {
+              if (err) console.error(`Error migrating ${m.table}.${m.column}:`, err.message);
+              else console.log(`Migrated ${m.table}: Added ${m.column}`);
+            });
+          }
+        }
+      });
     });
   }
 });

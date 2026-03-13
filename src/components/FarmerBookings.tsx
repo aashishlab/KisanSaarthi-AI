@@ -58,33 +58,38 @@ export const FarmerBookings = () => {
                     </div>
                   </div>
 
-                  {['Approved', 'In Progress', 'Completed'].includes(booking.status) ? (
                     <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 space-y-3">
                       <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
-                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Token No</span>
-                        <span className="font-mono font-bold text-primary flex items-center gap-1">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> {booking.token_number}
+                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Load Quantity</span>
+                        <span className="font-mono font-bold text-foreground">
+                          {booking.load_quantity} Tons
                         </span>
                       </div>
+                      
+                      {['Approved', 'In Progress', 'Completed'].includes(booking.status) && (
+                        <>
+                          <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
+                            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Token No</span>
+                            <span className="font-mono font-bold text-primary flex items-center gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> {booking.token_number}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
+                            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Slot Time</span>
+                            <span className="font-display font-semibold text-foreground flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {booking.slot_time}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      
                       <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
-                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Slot Time</span>
-                        <span className="font-display font-semibold text-foreground flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {booking.slot_time}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
-                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Wait Time</span>
+                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Hub Wait Time</span>
                         <span className="font-mono text-sm text-foreground flex items-center gap-1">
                           <Timer className="h-3.5 w-3.5 text-muted-foreground" /> {booking.waiting_time}
                         </span>
-                      </div>
                     </div>
-                  ) : (
-                    <div className="bg-white/5 rounded-xl p-8 border border-white/5 flex flex-col items-center justify-center text-center gap-2">
-                       <Timer className="h-8 w-8 text-yellow-500/50 animate-pulse" />
-                       <p className="text-sm font-medium text-muted-foreground">Waiting for factory approval...</p>
-                    </div>
-                  )}
+                  </div>
 
                   <div className="pt-4 border-t border-white/5 flex justify-between items-center">
                     <span className="text-[10px] text-muted-foreground font-mono">ID: #{booking.id.toString().padStart(5, '0')}</span>

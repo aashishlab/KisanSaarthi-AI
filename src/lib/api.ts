@@ -17,6 +17,7 @@ export interface Booking {
   hub_category?: string;
   waiting_time?: string;
   crop_type?: string;
+  load_quantity?: number;
 }
 
 export interface Slot {
@@ -25,6 +26,7 @@ export interface Slot {
   slot_time: string;
   capacity: number;
   booked_count: number;
+  total_booked_load: number;
 }
 
 
@@ -51,7 +53,14 @@ export interface Hub {
   latitude: number;
   longitude: number;
   capacity_per_slot: number;
+  processing_capacity_per_hour: number;
+  average_truck_load: number;
+  working_start_time: string;
+  working_end_time: string;
+  break_start: string;
+  break_end: string;
   queue_size: number;
+  total_load?: number;
   created_at: string;
 }
 
@@ -230,7 +239,33 @@ export const fetchSlots = async (hub_id: number): Promise<Slot[]> => {
   return res.json();
 };
 
-export const bookSlotNew = async (data: { farmer_id: number; hub_id: number; slot_id: number; vehicle_number: string }): Promise<any> => {
+export interface BookingPayloadSlot {
+  slot_id: number;
+  slot_time: string;
+  allocated_load: number;
+}
+
+export interface BookingPayload {
+  farmer_id: number;
+  hub_id: number;
+  vehicle_number: string;
+  total_load: number;
+  slots: BookingPayloadSlot[];
+}
+
+export interface BookingResponseSlot {
+  slot_time: string;
+  load: number;
+}
+
+export interface BookingResponse {
+  booking_id: number;
+  token_number: number;
+  allocated_slots: BookingResponseSlot[];
+  estimated_wait_time: string;
+}
+
+export const bookSlotNew = async (data: BookingPayload): Promise<BookingResponse> => {
   const res = await fetch(`${API_URL}/book-slot`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -261,6 +296,16 @@ export const updateBookingStatusNew = async (id: number, status: string): Promis
 export const fetchFactoryHub = async (factory_id: number): Promise<Hub> => {
   const res = await fetch(`${API_URL}/factory/hub/${factory_id}`);
   if (!res.ok) throw new Error('Failed to fetch factory hub');
+  return res.json();
+};
+
+export const updateHubSettings = async (hub_id: number, data: any): Promise<any> => {
+  const res = await fetch(`${API_URL}/hubs/${hub_id}/settings`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update hub settings');
   return res.json();
 };
 
