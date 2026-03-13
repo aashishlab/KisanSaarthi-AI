@@ -15,6 +15,7 @@ import RegisterFactory from "./pages/RegisterFactory.tsx";
 import RegisterFarmer from "./pages/RegisterFarmer.tsx";
 import CategoryHubs from "./pages/CategoryHubs.tsx";
 import HubBooking from "./pages/HubBooking.tsx";
+import HubCategoriesPage from "./pages/HubCategoriesPage.tsx";
 
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/register-factory" element={<RegisterFactory />} />
           <Route path="/register-farmer" element={<RegisterFarmer />} />
           <Route path="/farmer/hub-booking/:hubId" element={<HubBooking />} />
+          <Route path="/hub-categories" element={<HubCategoriesPage />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

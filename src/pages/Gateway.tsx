@@ -3,8 +3,11 @@ import { Factory, Tractor, ArrowRight, UserPlus } from "lucide-react";
 import FloatingShapes from "@/components/FloatingShapes";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Gateway = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -17,7 +20,10 @@ const Gateway = () => {
           <img src="/KisanSaarthi.jpeg" alt="KisanSaarthi Logo" className="h-10 w-auto p-1 object-contain rounded-xl mix-blend-multiply dark:mix-blend-normal dark:bg-white" />
           <span className="font-display text-xl font-bold tracking-tight hidden sm:inline-block">KisanSaarthi AI</span>
         </div>
-        <ModeToggle />
+        <div className="flex items-center gap-2">
+          <LanguageSelector />
+          <ModeToggle />
+        </div>
       </div>
 
       {/* Decorative background elements matching the main theme */}
@@ -26,11 +32,12 @@ const Gateway = () => {
 
       <div className="z-10 text-center mb-12">
         <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-foreground mb-4">
-          Welcome to <span className="text-primary">KisanSaarthi AI</span>
+          {t("welcomePrefix")} <span className="text-primary">KisanSaarthi AI</span> {t("welcomeSuffix", "")}
         </h1>
         <p className="font-ui text-lg text-muted-foreground max-w-lg mx-auto">
-          Eliminating wait times at agro-industrial hubs through AI-powered scheduling.
-          Please select your portal to continue.
+          {t("eliminationWaitTime")}
+          <br />
+          {t("selectPortal")}
         </p>
       </div>
 
@@ -45,16 +52,16 @@ const Gateway = () => {
              <div className="p-4 bg-primary/10 rounded-2xl mb-6 border border-primary/20 shadow-inner group-hover:scale-110 transition-transform">
                <Tractor className="h-12 w-12 text-primary" />
              </div>
-             <h2 className="font-display text-2xl font-bold tracking-tight text-foreground mb-2">Farmer Portal</h2>
+             <h2 className="font-display text-2xl font-bold tracking-tight text-foreground mb-2">{t("farmerPortal")}</h2>
              <p className="font-ui text-sm text-muted-foreground mb-6">
-               Book unloading slots, check queue status, and avoid long waiting times at processing hubs.
+                {t("farmerPortalDesc")}
              </p>
              <div className="flex flex-col gap-3 w-full">
                <Button onClick={() => navigate("/farmer/login")} className="w-full rounded-xl font-display font-semibold transition-all">
-                 Login as Farmer <ArrowRight className="ml-2 h-4 w-4" />
+                 {t("loginAsFarmer")} <ArrowRight className="ml-2 h-4 w-4" />
                </Button>
                <Button variant="outline" onClick={() => navigate("/register-farmer")} className="w-full rounded-xl font-display font-semibold border-primary/30 text-primary hover:bg-primary/10 transition-all">
-                 <UserPlus className="mr-2 h-4 w-4" /> Register Farmer
+                 <UserPlus className="mr-2 h-4 w-4" /> {t("registerFarmer")}
                </Button>
              </div>
           </div>
@@ -70,16 +77,16 @@ const Gateway = () => {
              <div className="p-4 bg-blue-500/10 rounded-2xl mb-6 border border-blue-500/20 shadow-inner group-hover:scale-110 transition-transform">
                <Factory className="h-12 w-12 text-blue-500" />
              </div>
-             <h2 className="font-display text-2xl font-bold tracking-tight text-foreground mb-2">Factory Operator</h2>
+             <h2 className="font-display text-2xl font-bold tracking-tight text-foreground mb-2">{t("factoryOperator")}</h2>
              <p className="font-ui text-sm text-muted-foreground mb-6">
-               Manage incoming vehicles, monitor live queues, and approve slot bookings efficiently.
+                {t("factoryOperatorDesc")}
              </p>
              <div className="flex flex-col gap-3 w-full">
                <Button variant="secondary" onClick={() => navigate("/factory/login")} className="w-full rounded-xl font-display font-semibold transition-all">
-                 Login <ArrowRight className="ml-2 h-4 w-4" />
+                 {t("login")} <ArrowRight className="ml-2 h-4 w-4" />
                </Button>
                <Button variant="outline" onClick={() => navigate("/register-factory")} className="w-full rounded-xl font-display font-semibold border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-all">
-                 <UserPlus className="mr-2 h-4 w-4" /> Register Factory
+                 <UserPlus className="mr-2 h-4 w-4" /> {t("registerFactory")}
                </Button>
              </div>
           </div>

@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import GLSLHills from "./GLSLHills";
 import FloatingShapes from "./FloatingShapes";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const HeroSection = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <section className="relative min-h-[92vh] flex items-center overflow-hidden">
@@ -21,34 +23,35 @@ const HeroSection = () => {
         <div className="max-w-3xl">
           <div className="inline-block glass rounded-full px-5 py-2 mb-8">
             <span className="font-ui text-xs font-semibold uppercase tracking-widest text-primary">
-              AI-Powered Logistics
+              {t("aiPoweredLogistics")}
             </span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-display font-bold leading-[0.95] tracking-tight mb-6">
-            Smart Crop
+            {t("smartCropDelivery").split("Farmers")[0]}
             <br />
-            Delivery for
+            {t("smartCropDelivery").includes("for") ? "for" : ""}
             <br />
-            <span className="text-primary">Farmers</span>
+            <span className="text-primary">{t("smartCropDelivery").split(" ").pop()}</span>
           </h1>
           
           <p className="font-ui text-lg text-muted-foreground max-w-lg mb-10 leading-relaxed">
-            Avoid long waiting queues and deliver crops efficiently using AI-powered scheduling and real-time hub data.
+            {t("heroDescription")}
           </p>
           
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" className="font-ui font-semibold text-sm h-13 px-8 rounded-xl shadow-lg shadow-primary/25" onClick={() => navigate("/farmer/book-slot")}>
-              Book Arrival Slot
+            <Button size="lg" className="font-ui font-semibold text-sm h-13 px-8 rounded-xl shadow-lg shadow-primary/25" onClick={() => navigate("/hub-categories")}>
+              {t("bookSlot")}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="font-ui font-semibold text-sm h-13 px-8 rounded-xl glass border-border hover:bg-muted transition-all duration-200"
+              onClick={() => navigate("/hub-categories")}
             >
               <MapPin className="mr-2 h-5 w-5" />
-              Explore Nearby Hubs
+              {t("exploreNearbyHubs")}
             </Button>
           </div>
         </div>
@@ -57,7 +60,7 @@ const HeroSection = () => {
         <div className="hidden lg:block absolute right-8 top-1/2 -translate-y-1/2">
           <div className="glass rounded-2xl p-0 w-72 shadow-xl shadow-foreground/5 animate-float">
             <div className="border-b border-border px-5 py-3.5 rounded-t-2xl">
-              <span className="font-display text-sm font-bold tracking-wide">Live Hub Data</span>
+              <span className="font-display text-sm font-bold tracking-wide">{t("liveHubData")}</span>
             </div>
             <div className="px-5 py-4 space-y-3">
               {[

@@ -1,4 +1,5 @@
 import { MapPin, Clock, Truck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const hubs = [
   { name: "Kolhapur Sugar Mill", location: "Kolhapur, MH", queue: 12, wait: "2.5 hrs", capacity: 50, status: "medium" as const },
@@ -22,14 +23,15 @@ const statusBadge = {
 };
 
 const NearbyHubs = () => {
+  const { t } = useTranslation();
   return (
     <section className="relative bg-grid">
       <div className="container py-20">
         <div className="text-center mb-12">
           <span className="inline-block glass rounded-full px-4 py-1.5 font-ui text-xs font-semibold uppercase tracking-widest text-primary mb-4">
-            Real-Time Data
+            {t("realTimeData")}
           </span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold">Nearby Agro Hubs</h2>
+          <h2 className="font-display text-4xl md:text-5xl font-bold">{t("nearbyAgroHubs")}</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -48,7 +50,7 @@ const NearbyHubs = () => {
                     </div>
                   </div>
                   <span className={`${statusBadge[hub.status]} px-3 py-1 rounded-full font-ui text-xs font-semibold capitalize`}>
-                    {hub.status}
+                    {t(hub.status)}
                   </span>
                 </div>
 
@@ -56,12 +58,12 @@ const NearbyHubs = () => {
                   <div className="glass rounded-xl p-3">
                     <Truck className="h-4 w-4 text-muted-foreground mb-1" />
                     <p className="font-display text-2xl font-bold">{hub.queue}</p>
-                    <p className="font-ui text-[10px] text-muted-foreground font-medium uppercase tracking-wider">In Queue</p>
+                    <p className="font-ui text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{t("inQueue")}</p>
                   </div>
                   <div className="glass rounded-xl p-3">
                     <Clock className="h-4 w-4 text-muted-foreground mb-1" />
                     <p className="font-display text-2xl font-bold">{hub.wait}</p>
-                    <p className="font-ui text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Est. Wait</p>
+                    <p className="font-ui text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{t("estWait")}</p>
                   </div>
                 </div>
               </div>

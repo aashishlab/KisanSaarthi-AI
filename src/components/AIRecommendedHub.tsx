@@ -1,22 +1,24 @@
 import { Sparkles, ArrowRight, MapPin, Clock, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 const AIRecommendedHub = () => {
+  const { t } = useTranslation();
   return (
     <section className="relative bg-dotted">
       <div className="container py-20">
         <div className="text-center mb-12">
           <span className="inline-block glass rounded-full px-4 py-1.5 font-ui text-xs font-semibold uppercase tracking-widest text-primary mb-4">
-            AI Recommendation
+            {t("aiRecommendation")}
           </span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold">Best Hub Right Now</h2>
+          <h2 className="font-display text-4xl md:text-5xl font-bold">{t("bestHubRightNow")}</h2>
         </div>
 
         <div className="glass rounded-2xl overflow-hidden border-primary/20 shadow-xl shadow-primary/10 max-w-4xl mx-auto">
           <div className="bg-primary/10 border-b border-primary/20 px-6 py-3.5 flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             <span className="font-ui text-sm font-semibold text-primary">
-              AI Recommended — Lowest Congestion
+              {t("aiRecommendedLowestCongestion")}
             </span>
           </div>
 
@@ -30,23 +32,21 @@ const AIRecommendedHub = () => {
                 </div>
 
                 <p className="font-ui text-sm text-muted-foreground mt-4 leading-relaxed">
-                  Currently operating at 15% capacity with only 4 vehicles in queue. 
-                  AI predicts this hub will remain low-traffic for the next 3 hours. 
-                  Optimal arrival window: now.
+                  {t("aiPredictsLowTraffic")}
                 </p>
 
                 <Button size="lg" className="mt-6 font-ui font-semibold text-sm h-13 px-8 rounded-xl shadow-lg shadow-primary/25">
-                  Book Slot Now
+                  {t("bookSlotNow")}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { icon: Truck, value: "4", label: "In Queue" },
-                  { icon: Clock, value: "45m", label: "Est. Wait" },
-                  { icon: Sparkles, value: "15%", label: "Capacity" },
-                  { icon: MapPin, value: "12km", label: "Distance" },
+                  { icon: Truck, value: "4", label: t("inQueue") },
+                  { icon: Clock, value: "45m", label: t("estWait") },
+                  { icon: Sparkles, value: "15%", label: t("capacity") },
+                  { icon: MapPin, value: "12km", label: t("distance") },
                 ].map((item) => (
                   <div key={item.label} className="glass rounded-xl p-5">
                     <item.icon className="h-5 w-5 text-muted-foreground mb-2" />

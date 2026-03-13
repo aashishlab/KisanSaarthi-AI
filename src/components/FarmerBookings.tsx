@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchFarmerBookings, ArrivalBooking } from "@/lib/api";
 import { Calendar, Clock, MapPin, CheckCircle2, AlertCircle, Timer } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const FarmerBookings = () => {
+  const { t } = useTranslation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const farmer_id = user.id;
 
@@ -20,16 +22,16 @@ export const FarmerBookings = () => {
       <div className="container">
         <div className="flex items-center gap-2 mb-8 text-primary">
           <Calendar className="h-6 w-6" />
-          <h2 className="font-display text-2xl font-bold tracking-tight">Your Slot Bookings</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">{t("yourSlotBookings")}</h2>
         </div>
 
         {isLoading ? (
           <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-            <Timer className="h-4 w-4" /> Fetching your bookings...
+            <Timer className="h-4 w-4" /> {t("fetchingBookings")}
           </div>
         ) : isError ? (
           <div className="flex items-center gap-2 text-destructive">
-            <AlertCircle className="h-4 w-4" /> Error loading bookings.
+            <AlertCircle className="h-4 w-4" /> {t("errorLoadingBookings")}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -60,22 +62,22 @@ export const FarmerBookings = () => {
 
                     <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 space-y-3">
                       <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
-                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Load Quantity</span>
+                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("loadQuantity")}</span>
                         <span className="font-mono font-bold text-foreground">
-                          {booking.load_quantity} Tons
+                          {booking.load_quantity} {t("tons")}
                         </span>
                       </div>
                       
                       {['Approved', 'In Progress', 'Completed'].includes(booking.status) && (
                         <>
                           <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
-                            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Token No</span>
+                            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("tokenNo")}</span>
                             <span className="font-mono font-bold text-primary flex items-center gap-1">
                               <CheckCircle2 className="h-3.5 w-3.5" /> {booking.token_number}
                             </span>
                           </div>
                           <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
-                            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Slot Time</span>
+                            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("slotTime")}</span>
                             <span className="font-display font-semibold text-foreground flex items-center gap-1">
                               <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {booking.slot_time}
                             </span>
@@ -84,7 +86,7 @@ export const FarmerBookings = () => {
                       )}
                       
                       <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
-                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Hub Wait Time</span>
+                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t("hubWaitTime")}</span>
                         <span className="font-mono text-sm text-foreground flex items-center gap-1">
                           <Timer className="h-3.5 w-3.5 text-muted-foreground" /> {booking.waiting_time}
                         </span>

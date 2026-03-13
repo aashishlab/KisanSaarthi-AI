@@ -1,22 +1,26 @@
 import { CalendarCheck, ListOrdered, Map, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
 
-const actions = [
-  { label: "Book Arrival Slot", desc: "Reserve your time at any hub", icon: CalendarCheck, path: "/farmer/book-slot" },
-  { label: "Check Queue Status", desc: "Real-time queue data across all hubs", icon: ListOrdered, path: "#" },
-  { label: "View All Hubs", desc: "Browse the complete hub directory", icon: Map, path: "#" },
+const getActions = (t: TFunction) => [
+  { label: t("bookArrivalSlot"), desc: t("bookSlotDesc"), icon: CalendarCheck, path: "/hub-categories" },
+  { label: t("checkQueueStatus"), desc: t("queueStatusDesc"), icon: ListOrdered, path: "#" },
+  { label: t("viewAllHubs"), desc: t("viewHubsDesc"), icon: Map, path: "/hub-categories" },
 ];
 
 const QuickActions = () => {
+  const { t } = useTranslation();
+  const actions = getActions(t);
   const navigate = useNavigate();
   return (
     <section className="relative bg-grid">
       <div className="container py-20">
         <div className="text-center mb-12">
           <span className="inline-block glass rounded-full px-4 py-1.5 font-ui text-xs font-semibold uppercase tracking-widest text-primary mb-4">
-            Actions
+            {t("actions")}
           </span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold">Quick Actions</h2>
+          <h2 className="font-display text-4xl md:text-5xl font-bold">{t("quickActions")}</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

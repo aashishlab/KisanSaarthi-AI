@@ -1,14 +1,20 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchHubsByCategory } from "@/lib/api";
 import { ArrowLeft, Clock, MapPin, Truck, Factory, AlertCircle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
+import FarmerChatbot from "@/components/ui/chat";
 
 const CategoryHubs = () => {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Read optional quantity pre-filled by chatbot via URL query param
+  const searchParams = new URLSearchParams(location.search);
+  const prefillQuantity = searchParams.get('quantity');
 
   const { data: hubs, isLoading, isError } = useQuery({
     queryKey: ['hubs-by-category', category],
@@ -165,7 +171,11 @@ const CategoryHubs = () => {
                             return;
                           }
                           
-                          navigate(`/farmer/hub-booking/${hub.id}`);
+                          // Pass quantity pre-fill forward if chatbot sent one
+                          const bookingUrl = prefillQuantity
+                            ? `/farmer/hub-booking/${hub.id}?quantity=${prefillQuantity}`
+                            : `/farmer/hub-booking/${hub.id}`;
+                          navigate(bookingUrl);
                         }}
                       >
                         <Calendar className="h-5 w-5" />
@@ -179,6 +189,7 @@ const CategoryHubs = () => {
           )}
         </div>
       </div>
+      <FarmerChatbot />
     </div>
   );
 };

@@ -1,0 +1,137 @@
+/* Floating chatbot button */
+.chatbot-icon {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: #2e7d32;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: 0.3s;
+    z-index: 9999;
+}
+
+.chatbot-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Chatbot window */
+.chatbot-window {
+    position: fixed;
+    bottom: 100px;
+    right: 25px;
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+}
+
+/* Header */
+.chat-header {
+    background: #2e7d32;
+    color: white;
+    padding: 14px;
+    font-weight: bold;
+}
+
+/* Chat messages */
+.chat-body {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    background: #f4f4f4;
+}
+
+.message {
+    padding: 8px 12px;
+    margin: 6px 0;
+    border-radius: 12px;
+    max-width: 70%;
+    color: #111;
+    white-space: pre-wrap;
+}
+
+.user {
+    background: #2e7d32;
+    color: white !important;
+    margin-left: auto;
+}
+
+.bot {
+    background: white;
+    border: 1px solid #ddd;
+}
+
+/* Input */
+.chat-input {
+    display: flex;
+    border-top: 1px solid #ddd;
+}
+
+.chat-input input {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    color: #111;
+    background: #fff;
+    font-size: 14px;
+}
+
+.chat-input input:focus {
+    outline: none;
+}
+
+.chat-input button {
+    background: #2e7d32;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.chat-input button:hover {
+    background: #1b5e20;
+}
+
+.typing {
+    font-size: 12px;
+    color: gray;
+    font-style: italic;
+    padding: 4px 0;
+}
+
+.mic-button {
+    background: #2e7d32;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.language-container {
+    padding: 8px;
+    background: #f4f4f4;
+}
+
+.language-select {
+    width: 100%;
+    padding: 6px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #111;
+}

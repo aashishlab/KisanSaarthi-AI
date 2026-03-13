@@ -1,40 +1,44 @@
 import { useEffect, useRef, useState } from "react";
 import { Rocket, Zap, Globe, Shield, Brain } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
 
-const milestones = [
+const getMilestones = (t: TFunction) => [
   {
     date: "Step 1",
-    title: "Farmer Login",
-    description: "Farmer logs into the KisanSaarthi platform and selects the crop category and nearby factory.",
+    title: t("step1Title"),
+    description: t("step1Desc"),
     icon: Rocket,
   },
   {
     date: "Step 2",
-    title: "Book Arrival Slot",
-    description: "Farmer checks available slots on the calendar and books a suitable unloading time.",
+    title: t("step2Title"),
+    description: t("step2Desc"),
     icon: Brain,
   },
   {
     date: "Step 3",
-    title: "Factory Approval",
-    description: "Factory reviews the request and confirms the slot, providing a token number and estimated waiting time.",
+    title: t("step3Title"),
+    description: t("step3Desc"),
     icon: Globe,
   },
   {
     date: "Step 4",
-    title: "Arrival at Factory",
-    description: "Farmer reaches the factory at the scheduled time and joins the smart queue using the assigned token.",
+    title: t("step4Title"),
+    description: t("step4Desc"),
     icon: Zap,
   },
   {
     date: "Step 5",
-    title: "Unloading & Completion",
-    description: "The crop is unloaded smoothly without long waiting times, improving safety and efficiency.",
+    title: t("step5Title"),
+    description: t("step5Desc"),
     icon: Shield,
   },
 ];
 
 const Timeline = () => {
+  const { t } = useTranslation();
+  const milestones = getMilestones(t);
   const [activeIndex, setActiveIndex] = useState(0);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -67,11 +71,11 @@ const Timeline = () => {
       <div className="container py-24">
         <div className="text-center mb-16">
           <span className="inline-block glass rounded-full px-4 py-1.5 font-ui text-xs font-semibold uppercase tracking-widest text-primary mb-4">
-            Roadmap
+            {t("roadmap")}
           </span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold">Our Journey</h2>
+          <h2 className="font-display text-4xl md:text-5xl font-bold">{t("ourJourney")}</h2>
           <p className="font-ui text-muted-foreground mt-3 max-w-lg mx-auto">
-            Building the future of agricultural logistics, one milestone at a time.
+            {t("roadmapDescription")}
           </p>
         </div>
 

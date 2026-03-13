@@ -2,16 +2,20 @@ import { Factory, Milk, Apple, Store, Grape } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchCategoryCounts } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
 
-const categories = [
-  { name: "Sugar Mill", icon: Factory, displayName: "Sugar Mills" },
-  { name: "Dairy Plant", icon: Milk, displayName: "Dairy Plants" },
-  { name: "Food Processing", icon: Apple, displayName: "Food Processing" },
-  { name: "APMC Market", icon: Store, displayName: "APMC Markets" },
-  { name: "Fruits & Vegetables", icon: Grape, displayName: "Fruits & Vegetables" },
+const getCategories = (t: TFunction) => [
+  { name: "Sugar Mill", icon: Factory, displayName: t("sugarMill") },
+  { name: "Dairy Plant", icon: Milk, displayName: t("dairyPlant") },
+  { name: "Food Processing", icon: Apple, displayName: t("foodProcessing") },
+  { name: "APMC Market", icon: Store, displayName: t("apmcMarket") },
+  { name: "Fruits & Vegetables", icon: Grape, displayName: t("fruitsVegetables") },
 ];
 
 const IndustryCategories = () => {
+  const { t } = useTranslation();
+  const categories = getCategories(t);
   const navigate = useNavigate();
   const { data: counts } = useQuery({
     queryKey: ['category-counts'],
@@ -24,9 +28,9 @@ const IndustryCategories = () => {
       <div className="container py-20">
         <div className="text-center mb-12">
           <span className="inline-block glass rounded-full px-4 py-1.5 font-ui text-xs font-semibold uppercase tracking-widest text-primary mb-4">
-            Industries
+            {t("industries")}
           </span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold">Hub Categories</h2>
+          <h2 className="font-display text-4xl md:text-5xl font-bold">{t("hubCategories")}</h2>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -43,7 +47,7 @@ const IndustryCategories = () => {
               <p className="font-display text-3xl font-bold mt-2 text-primary">
                 {counts?.[cat.name] || 0}
               </p>
-              <p className="font-ui text-xs text-muted-foreground font-medium mt-1">Active Hubs</p>
+              <p className="font-ui text-xs text-muted-foreground font-medium mt-1">{t("activeHubs")}</p>
             </button>
           ))}
         </div>

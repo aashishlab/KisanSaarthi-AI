@@ -1,21 +1,28 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchSlots, fetchHubsByCategory, bookSlotNew, Hub, Slot } from "@/lib/api";
 import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckCircle2, Factory, Truck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
+import FarmerChatbot from "@/components/ui/chat";
 
 const HubBooking = () => {
   const { hubId } = useParams<{ hubId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
   const [selectedSlotTime, setSelectedSlotTime] = useState<string | null>(null);
-  const [loadQuantity, setLoadQuantity] = useState<number>(10);
+
+  // Pre-fill load quantity from chatbot URL query param (?quantity=10)
+  const searchParams = new URLSearchParams(location.search);
+  const prefillQty = parseFloat(searchParams.get('quantity') || '10') || 10;
+  const [loadQuantity, setLoadQuantity] = useState<number>(prefillQty);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmationData, setConfirmationData] = useState<any>(null);
 
@@ -325,6 +332,7 @@ const HubBooking = () => {
 
         </div>
       </div>
+      <FarmerChatbot />
     </div>
   );
 };

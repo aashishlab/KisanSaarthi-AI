@@ -1,20 +1,24 @@
 import { Truck, Clock, Radio } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
 
-const stats = [
-  { label: "Total Vehicles Waiting", value: "1,247", icon: Truck, delta: "+12%" },
-  { label: "Average Wait Time", value: "3.2 hrs", icon: Clock, delta: "-8%" },
-  { label: "Active Hubs", value: "130", icon: Radio, delta: "+3" },
+const getStats = (t: TFunction) => [
+  { label: t("totalVehiclesWaiting"), value: "1,247", icon: Truck, delta: "+12%" },
+  { label: t("averageWaitTime"), value: "3.2 hrs", icon: Clock, delta: "-8%" },
+  { label: t("activeHubs"), value: "130", icon: Radio, delta: "+3" },
 ];
 
 const QueueInsights = () => {
+  const { t } = useTranslation();
+  const stats = getStats(t);
   return (
     <section className="relative">
       <div className="container py-20">
         <div className="text-center mb-12">
           <span className="inline-block glass rounded-full px-4 py-1.5 font-ui text-xs font-semibold uppercase tracking-widest text-primary mb-4">
-            Analytics
+            {t("analytics")}
           </span>
-          <h2 className="font-display text-4xl md:text-5xl font-bold">Smart Queue Insights</h2>
+          <h2 className="font-display text-4xl md:text-5xl font-bold">{t("smartQueueInsights")}</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -27,7 +31,7 @@ const QueueInsights = () => {
               <p className="font-ui text-sm font-medium text-muted-foreground mt-2">{stat.label}</p>
               <div className="mt-4 inline-block bg-accent rounded-full px-3 py-1">
                 <span className="font-display text-sm font-bold text-primary">{stat.delta}</span>
-                <span className="font-ui text-[10px] font-medium text-muted-foreground ml-1">vs last week</span>
+                <span className="font-ui text-[10px] font-medium text-muted-foreground ml-1">{t("vsLastWeek")}</span>
               </div>
             </div>
           ))}
@@ -35,7 +39,7 @@ const QueueInsights = () => {
 
         {/* Mini chart */}
         <div className="mt-4 glass rounded-2xl p-6">
-          <p className="font-ui text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Hourly Queue Volume (Today)</p>
+          <p className="font-ui text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">{t("hourlyQueueVolume")}</p>
           <div className="flex items-end gap-1.5 h-32">
             {[20, 35, 45, 60, 80, 95, 85, 70, 55, 40, 30, 25, 50, 65, 90, 100, 88, 72, 58, 42, 28, 18, 12, 8].map(
               (val, i) => (

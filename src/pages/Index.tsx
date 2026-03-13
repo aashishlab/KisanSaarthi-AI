@@ -8,6 +8,7 @@ import QueueInsights from "@/components/QueueInsights";
 import AIRecommendedHub from "@/components/AIRecommendedHub";
 import QuickActions from "@/components/QuickActions";
 import { FarmerBookings } from "@/components/FarmerBookings";
+import FarmerChatbot from "@/components/ui/chat";
 
 const Index = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -55,6 +56,7 @@ const Index = () => {
             </div>
           </div>
         </footer>
+        <FarmerChatbot />
       </div>
     </div>
   );

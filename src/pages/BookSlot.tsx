@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import FarmerChatbot from "@/components/ui/chat";
 import { CalendarCheck, User, Truck, Factory, ArrowLeft, Leaf, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,6 +168,7 @@ const BookSlot = () => {
           </form>
         </div>
       </div>
+      <FarmerChatbot />
     </div>
   );
 };

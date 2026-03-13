@@ -3,9 +3,12 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "./LanguageSelector";
 import FarmerProfileDropdown from "./FarmerProfileDropdown";
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -14,7 +17,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    toast.success("Logged out successfully");
+    toast.success(t("logoutSuccess") || "Logged out successfully");
     navigate("/");
   };
 
@@ -27,18 +30,24 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-8">
-          {["Dashboard", "Hubs", "Queue Status", "Bookings"].map((link) => (
+          {[
+            { name: t("dashboard"), path: "#" },
+            { name: t("hubs"), path: "#" },
+            { name: t("queueStatus"), path: "#" },
+            { name: t("bookings"), path: "#" }
+          ].map((link) => (
             <a
-              key={link}
-              href="#"
+              key={link.name}
+              href={link.path}
               className="font-ui text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200"
             >
-              {link}
+              {link.name}
             </a>
           ))}
         </div>
 
         <div className="flex items-center gap-2">
+          <LanguageSelector />
           <ModeToggle />
           <button className="p-2.5 rounded-xl hover:bg-muted transition-colors duration-200">
             <Bell className="h-5 w-5 text-muted-foreground" />
@@ -58,7 +67,7 @@ const Navbar = () => {
             className="font-ui font-semibold text-sm rounded-xl px-5 h-10 border-primary/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 ml-2"
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Logout
+            {t("logout")}
           </Button>
         </div>
       </div>
