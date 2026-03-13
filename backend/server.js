@@ -61,8 +61,10 @@ app.post('/api/factory/register', async (req, res) => {
 // API Route: Register a new farmer
 app.post('/api/farmer/register', async (req, res) => {
   const { name, phone, password, village, vehicle_no, crop_type, preferred_hub } = req.body;
+  console.log('Farmer registration attempt:', { name, phone, village, vehicle_no, crop_type, preferred_hub });
 
   if (!name || !phone || !password || !village || !vehicle_no || !crop_type || !preferred_hub) {
+    console.log('Registration failed: Missing fields');
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
@@ -73,6 +75,7 @@ app.post('/api/farmer/register', async (req, res) => {
     
     db.run(sql, [name, phone, hashedPassword, village, vehicle_no, crop_type, preferred_hub], function (err) {
       if (err) {
+        console.error('Database error during farmer registration:', err.message);
         if (err.message.includes('UNIQUE constraint failed')) {
           if (err.message.includes('phone')) {
             return res.status(400).json({ error: 'A farmer with this phone number already exists.' });
@@ -84,15 +87,18 @@ app.post('/api/farmer/register', async (req, res) => {
         return res.status(500).json({ error: err.message });
       }
 
+      console.log('Farmer registered successfully:', { id: this.lastID, name });
       res.status(201).json({
         message: 'Farmer registered successfully',
         data: { id: this.lastID, name, role: 'farmer' }
       });
     });
   } catch (error) {
+    console.error('Hashing error during farmer registration:', error);
     res.status(500).json({ error: 'Error hashing password' });
   }
 });
+
 
 // API Route: Unified Login
 app.post('/api/login', (req, res) => {
@@ -143,16 +149,16 @@ app.post('/api/login', (req, res) => {
   const runLogin = async () => {
     if (role === 'farmer') {
       const farmerRes = await checkFarmer();
-      if (farmerRes) return res.json(farmerRes);
+      if (farmerRes) return res.json({ ...farmerRes, id: (jwt.decode(farmerRes.token)).id });
     } else if (role === 'factory') {
       const userRes = await checkUser();
-      if (userRes) return res.json(userRes);
+      if (userRes) return res.json({ ...userRes, id: (jwt.decode(userRes.token)).id });
     } else {
       // Unified login without role hint
       const farmerRes = await checkFarmer();
-      if (farmerRes) return res.json(farmerRes);
+      if (farmerRes) return res.json({ ...farmerRes, id: (jwt.decode(farmerRes.token)).id });
       const userRes = await checkUser();
-      if (userRes) return res.json(userRes);
+      if (userRes) return res.json({ ...userRes, id: (jwt.decode(userRes.token)).id });
     }
     return res.status(401).json({ error: 'Invalid credentials' });
   };
@@ -197,6 +203,29 @@ app.get('/api/hubs', (req, res) => {
   });
 });
 
+// API Route: Get hub for a specific factory
+app.get('/api/factory/hub/:factory_id', (req, res) => {
+  const factory_id = req.params.factory_id;
+  db.get(`SELECT * FROM hubs WHERE factory_id = ?`, [factory_id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Hub not found for this factory.' });
+    res.json(row);
+  });
+});
+
+// GET /api/hubs/category-counts - Get number of hubs per category
+app.get('/api/hubs/category-counts', (req, res) => {
+  db.all(`SELECT category, COUNT(*) as count FROM hubs GROUP BY category`, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const counts = {};
+    rows.forEach(r => {
+      counts[r.category] = r.count;
+    });
+    res.json(counts);
+  });
+});
+
+
 // --- Slot & Booking Routes ---
 
 const ALL_SLOTS = [
@@ -230,7 +259,7 @@ app.post('/api/send-request', (req, res) => {
 app.get('/api/requests', (req, res) => {
   const MAX_PER_SLOT = 3;
 
-  db.all(`SELECT arrival_slot, COUNT(*) as count FROM bookings WHERE status IN ('Waiting','In Progress','Approved') GROUP BY arrival_slot`, [], (err, slotCounts) => {
+  db.all(`SELECT arrival_slot, COUNT(*) as count FROM live_queue WHERE status IN ('Waiting','In Progress','Approved') GROUP BY arrival_slot`, [], (err, slotCounts) => {
     if (err) return res.status(500).json({ error: err.message });
 
     const slotUsage = {};
@@ -279,7 +308,7 @@ app.get('/api/requests', (req, res) => {
 // PUT /api/accept-request/:id  – auto-assign next available slot
 app.put('/api/accept-request/:id', (req, res) => {
   const id = req.params.id;
-  db.all(`SELECT arrival_slot FROM bookings WHERE status IN ('Waiting','In Progress','Approved')`, [], (err, rows) => {
+  db.all(`SELECT arrival_slot FROM live_queue WHERE status IN ('Waiting','In Progress','Approved')`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     const usedSlots = rows.map(r => r.arrival_slot);
     const nextSlot = ALL_SLOTS.find(s => !usedSlots.includes(s)) || ALL_SLOTS[0];
@@ -315,32 +344,103 @@ app.put('/api/assign-slot/:id', (req, res) => {
 
 // GET /api/pending-count  – live badge count
 app.get('/api/pending-count', (req, res) => {
-  db.get(`SELECT COUNT(*) as count FROM requests WHERE status = 'Pending'`, [], (err, row) => {
+  const { hub_id } = req.query;
+  let sql = `SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'`;
+  const params = [];
+
+  if (hub_id) {
+    sql += ` AND hub_id = ?`;
+    params.push(hub_id);
+  }
+
+  db.get(sql, params, (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ count: row.count });
   });
 });
 
 // ─────────────────────────────────────────────────────────
-// LIVE QUEUE ROUTES (bookings table)
+// NEW BOOKING SYSTEM ROUTES (bookings table)
 // ─────────────────────────────────────────────────────────
 
-// POST /api/book-slot  – legacy direct booking (kept for backward compat)
-app.post('/api/book-slot', (req, res) => {
-  const { farmer_name, vehicle_no, hub_name, arrival_slot } = req.body;
-  if (!farmer_name || !vehicle_no || !hub_name || !arrival_slot) {
-    return res.status(400).json({ error: 'All fields are required.' });
+// 1. POST /api/bookings - Create a booking request
+app.post('/api/bookings', (req, res) => {
+  const { farmer_id, hub_id } = req.body;
+  if (!farmer_id || !hub_id) {
+    return res.status(400).json({ error: 'Farmer ID and Hub ID are required.' });
   }
-  db.run(`INSERT INTO bookings (farmer_name, vehicle_no, hub_name, arrival_slot, status) VALUES (?, ?, ?, ?, 'Waiting')`,
-    [farmer_name, vehicle_no, hub_name, arrival_slot], function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ message: 'Booking created', data: { id: this.lastID, farmer_name, vehicle_no, hub_name, arrival_slot, status: 'Waiting' } });
+
+  const sql = `INSERT INTO bookings (farmer_id, hub_id, status) VALUES (?, ?, 'pending')`;
+  db.run(sql, [farmer_id, hub_id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(201).json({
+      message: 'Booking request sent successfully',
+      data: { id: this.lastID, farmer_id, hub_id, status: 'pending' }
     });
+  });
 });
 
-// GET /api/queue  – live queue data for factory dashboard
+// 2. GET /api/factory/bookings/:hub_id - Get pending bookings for a hub
+app.get('/api/factory/bookings/:hub_id', (req, res) => {
+  const hub_id = req.params.hub_id;
+  const sql = `
+    SELECT b.*, f.name as farmer_name, f.phone as farmer_phone, f.vehicle_no, f.crop_type
+    FROM bookings b
+    JOIN farmers f ON b.farmer_id = f.id
+    WHERE b.hub_id = ? AND b.status = 'pending'
+    ORDER BY b.created_at ASC
+  `;
+  db.all(sql, [hub_id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// 3. PUT /api/bookings/:id/approve - Factory approves a booking
+app.put('/api/bookings/:id/approve', (req, res) => {
+  const id = req.params.id;
+  const { token_number, slot_time, waiting_time } = req.body;
+
+  if (!token_number || !slot_time || !waiting_time) {
+    return res.status(400).json({ error: 'Token number, slot time, and waiting time are required.' });
+  }
+
+  const sql = `
+    UPDATE bookings 
+    SET status = 'approved', token_number = ?, slot_time = ?, waiting_time = ?
+    WHERE id = ?
+  `;
+  db.run(sql, [token_number, slot_time, waiting_time, id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Booking not found.' });
+    res.json({ message: 'Booking approved successfully', data: { id, status: 'approved' } });
+  });
+});
+
+// 4. GET /api/farmer/bookings/:farmer_id - Farmer sees their booking status
+app.get('/api/farmer/bookings/:farmer_id', (req, res) => {
+  const farmer_id = req.params.farmer_id;
+  const sql = `
+    SELECT b.*, h.name as hub_name, h.location as hub_location, h.category as hub_category
+    FROM bookings b
+    JOIN hubs h ON b.hub_id = h.id
+    WHERE b.farmer_id = ?
+    ORDER BY b.created_at DESC
+  `;
+  db.all(sql, [farmer_id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+
+// ─────────────────────────────────────────────────────────
+// LIVE QUEUE ROUTES (live_queue table)
+// ─────────────────────────────────────────────────────────
+
+// GET /api/queue – live queue data for factory dashboard
 app.get('/api/queue', (req, res) => {
-  db.all(`SELECT * FROM bookings WHERE status NOT IN ('Rejected') ORDER BY id DESC`, [], (err, rows) => {
+  db.all(`SELECT * FROM live_queue WHERE status NOT IN ('Rejected') ORDER BY id DESC`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     const waiting = rows.filter(r => r.status === 'Approved' || r.status === 'Waiting').length;
     const active = rows.filter(r => r.status === 'In Progress').length;
@@ -349,11 +449,11 @@ app.get('/api/queue', (req, res) => {
   });
 });
 
-// PUT /api/update-status/:id  – update booking status in queue
+// PUT /api/update-status/:id – update booking status in queue
 app.put('/api/update-status/:id', (req, res) => {
   const { status } = req.body;
   if (!status) return res.status(400).json({ error: 'Status is required.' });
-  db.run(`UPDATE bookings SET status = ? WHERE id = ?`, [status, req.params.id], function (err) {
+  db.run(`UPDATE live_queue SET status = ? WHERE id = ?`, [status, req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0) return res.status(404).json({ error: 'Booking not found.' });
     res.json({ message: 'Status updated', data: { id: req.params.id, status } });

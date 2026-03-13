@@ -8,14 +8,31 @@ const db = new sqlite3.Database(dbPath, (err) => {
   } else {
     console.log('Connected to the SQLite database.');
 
-    // Original bookings table (live queue)
-    db.run(`CREATE TABLE IF NOT EXISTS bookings (
+    // Original table renamed to live_queue
+    db.run(`CREATE TABLE IF NOT EXISTS live_queue (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       farmer_name TEXT NOT NULL,
       vehicle_no TEXT NOT NULL,
       hub_name TEXT NOT NULL,
       arrival_slot TEXT NOT NULL,
       status TEXT DEFAULT 'Waiting'
+    )`, (err) => {
+      if (err) console.error('Error creating live_queue table', err.message);
+      else console.log('live_queue table ready.');
+    });
+
+    // New bookings table for arrival slot requests
+    db.run(`CREATE TABLE IF NOT EXISTS bookings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      farmer_id INTEGER NOT NULL,
+      hub_id INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending', -- pending, approved, rejected
+      token_number TEXT,
+      slot_time TEXT,
+      waiting_time TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (farmer_id) REFERENCES farmers(id),
+      FOREIGN KEY (hub_id) REFERENCES hubs(id)
     )`, (err) => {
       if (err) console.error('Error creating bookings table', err.message);
       else console.log('Bookings table ready.');
