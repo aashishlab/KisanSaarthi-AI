@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchHubsByCategory } from "@/lib/api";
+import { fetchHubsByCategory, createBooking } from "@/lib/api";
 import { ArrowLeft, Clock, MapPin, Truck, Factory, AlertCircle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import { toast } from "sonner";
 
 const CategoryHubs = () => {
   const { category } = useParams<{ category: string }>();
@@ -149,7 +150,26 @@ const CategoryHubs = () => {
                     <div className="p-6 pt-0 bg-transparent">
                       <Button 
                         className="w-full h-14 rounded-2xl gap-3 font-display font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all" 
-                        onClick={() => navigate(`/farmer/book-slot?hub=${encodeURIComponent(hub.name)}`)}
+                        onClick={async () => {
+                          const userStr = localStorage.getItem('user');
+                          if (!userStr) {
+                            toast.error("Please login as a farmer to book a slot.");
+                            navigate('/farmer/login');
+                            return;
+                          }
+                          const user = JSON.parse(userStr);
+                          if (user.role !== 'farmer') {
+                            toast.error("Only farmers can book arrival slots.");
+                            return;
+                          }
+                          
+                          try {
+                            await createBooking(user.id, hub.id);
+                            toast.success(`Booking request sent for ${hub.name}!`);
+                          } catch (err: any) {
+                            toast.error(err.message || "Failed to book slot.");
+                          }
+                        }}
                       >
                         <Calendar className="h-5 w-5" />
                         Book Arrival Slot

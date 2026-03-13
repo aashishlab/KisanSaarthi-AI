@@ -32,12 +32,14 @@ const RegisterFactory = () => {
     }
     setIsSubmitting(true);
     try {
-      await registerFactory(form);
-      toast.success("Factory registered successfully!");
+      const response = await registerFactory(form);
+      toast.success(response.message || "Factory registered successfully!");
       navigate("/factory/dashboard");
     } catch (err: any) {
-      toast.error(err.message || "Registration failed.");
+      console.error("Registration error:", err);
+      toast.error(err.message || "Registration failed. Please try again.");
     } finally {
+
       setIsSubmitting(false);
     }
   };

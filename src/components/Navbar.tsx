@@ -1,8 +1,19 @@
-import { Bell, User } from "lucide-react";
+import { Bell, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    toast.success("Logged out successfully");
+    navigate("/");
+  };
+
   return (
     <nav className="fixed top-4 left-4 right-4 z-50 glass-strong rounded-2xl shadow-lg shadow-foreground/5 dark:bg-background/80 dark:backdrop-blur-md">
       <div className="container flex items-center justify-between h-16 px-6">
@@ -31,15 +42,19 @@ const Navbar = () => {
           <button className="p-2.5 rounded-xl hover:bg-muted transition-colors duration-200">
             <User className="h-5 w-5 text-muted-foreground" />
           </button>
-          <a href="/">
-            <Button variant="outline" className="font-ui font-semibold text-sm rounded-xl px-5 h-10 border-primary/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 ml-2">
-              Logout
-            </Button>
-          </a>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="font-ui font-semibold text-sm rounded-xl px-5 h-10 border-primary/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 ml-2"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </div>
     </nav>
   );
 };
+
 
 export default Navbar;

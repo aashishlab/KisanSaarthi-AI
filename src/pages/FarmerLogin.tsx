@@ -21,7 +21,7 @@ const FarmerLogin = () => {
         const res = await login({ phone, password, role: 'farmer' });
         if (res.role === 'farmer') {
           localStorage.setItem('token', res.token);
-          localStorage.setItem('user', JSON.stringify({ name: res.name, role: res.role }));
+          localStorage.setItem('user', JSON.stringify({ id: res.id, name: res.name, role: res.role }));
           toast.success("Login successful!");
           navigate("/farmer/dashboard");
         } else {

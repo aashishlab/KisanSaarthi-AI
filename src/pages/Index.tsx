@@ -7,13 +7,17 @@ import FeaturedCarousel from "@/components/FeaturedCarousel";
 import QueueInsights from "@/components/QueueInsights";
 import AIRecommendedHub from "@/components/AIRecommendedHub";
 import QuickActions from "@/components/QuickActions";
+import { FarmerBookings } from "@/components/FarmerBookings";
 
 const Index = () => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isFarmer = user.role === 'farmer';
   return (
     <div className="min-h-screen">
       <Navbar />
       <div className="pt-20">
         <HeroSection />
+        {isFarmer && <FarmerBookings />}
         <Timeline />
         <IndustryCategories />
         <NearbyHubs />

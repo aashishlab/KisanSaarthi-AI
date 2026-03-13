@@ -29,12 +29,14 @@ const RegisterFarmer = () => {
     }
     setIsSubmitting(true);
     try {
-      await registerFarmer(form);
-      toast.success("Farmer registered successfully!");
+      const response = await registerFarmer(form);
+      toast.success(response.message || "Farmer registered successfully!");
       navigate("/farmer/login");
     } catch (err: any) {
-      toast.error(err.message || "Registration failed.");
+      console.error("Registration error:", err);
+      toast.error(err.message || "Registration failed. Please try again.");
     } finally {
+
       setIsSubmitting(false);
     }
   };

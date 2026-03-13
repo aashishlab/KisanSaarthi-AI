@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Bell, Factory, Truck, Activity, AlertTriangle, Clock, LayoutDashboard, ListTodo, FileText, Settings, LogOut, CheckCircle2, XCircle, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { fetchQueue, updateBookingStatus, fetchPendingCount, QueueData, Booking } from "@/lib/api";
+import { fetchQueue, updateBookingStatus, fetchPendingCount, fetchFactoryHub, QueueData, Booking } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const Sidebar = ({ pendingCount }: { pendingCount: number }) => (
+const Sidebar = ({ pendingCount, onLogout }: { pendingCount: number, onLogout: () => void }) => (
   <div className="fixed inset-y-0 left-0 w-64 glass-strong border-r border-white/10 z-50 flex flex-col transition-transform duration-300 ease-in-out">
     <div className="flex items-center gap-2.5 p-6 border-b border-white/10">
       <div className="p-1.5 bg-primary rounded-xl">
@@ -50,7 +51,11 @@ const Sidebar = ({ pendingCount }: { pendingCount: number }) => (
     </div>
 
     <div className="p-4 border-t border-white/10">
-      <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+      <Button 
+        variant="ghost" 
+        onClick={onLogout}
+        className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+      >
         <LogOut className="mr-2 h-5 w-5" />
         Logout
       </Button>
@@ -59,7 +64,29 @@ const Sidebar = ({ pendingCount }: { pendingCount: number }) => (
 );
 
 const FactoryDashboard = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    toast.success("Logged out successfully");
+    navigate("/");
+  };
+
+
+  // Get factory user from localStorage
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const factory_id = user.id;
+
+  // Fetch factory hub
+  const { data: hub } = useQuery({
+    queryKey: ['factory-hub', factory_id],
+    queryFn: () => fetchFactoryHub(factory_id),
+    enabled: !!factory_id
+  });
+
+  const hub_id = hub?.id;
 
   // Fetch queue data from Express backend
   const { data: queueData, isLoading, isError } = useQuery({
@@ -70,8 +97,8 @@ const FactoryDashboard = () => {
 
   // Fetch pending requests count for sidebar badge
   const { data: pendingCountData } = useQuery({
-    queryKey: ['pending-count'],
-    queryFn: fetchPendingCount,
+    queryKey: ['pending-count', hub_id],
+    queryFn: () => fetchPendingCount(hub_id),
     refetchInterval: 5000
   });
   const pendingCount = pendingCountData?.count ?? 0;
@@ -115,7 +142,7 @@ const FactoryDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar pendingCount={pendingCount} />
+      <Sidebar pendingCount={pendingCount} onLogout={handleLogout} />
       {/* Main Content wrapper */}
       <div className="flex-1 ml-64 pl-8 pr-8 pt-8 pb-12">
         {/* Top Header */}
