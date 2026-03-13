@@ -553,6 +553,41 @@ app.put('/api/update-status/:id', (req, res) => {
   });
 });
 
+app.get('/api/farmer/profile/:id', (req, res) => {
+  const farmer_id = req.params.id;
+  
+  const sql = `
+    SELECT f.*, 
+           (SELECT COUNT(*) FROM bookings WHERE farmer_id = f.id AND status = 'Completed') as total_visits,
+           (SELECT h.name FROM bookings b JOIN hubs h ON b.hub_id = h.id WHERE b.farmer_id = f.id AND b.status = 'Completed' ORDER BY b.created_at DESC LIMIT 1) as last_factory,
+           (SELECT GROUP_CONCAT(s.slot_time, ', ') 
+            FROM booking_slots bs 
+            JOIN slots s ON bs.slot_id = s.id 
+            WHERE bs.booking_id = (SELECT id FROM bookings WHERE farmer_id = f.id ORDER BY created_at DESC LIMIT 1)) as last_slot,
+           (SELECT COUNT(*) FROM bookings WHERE farmer_id = f.id AND status = 'Pending') as pending_requests,
+           (SELECT COUNT(*) FROM bookings WHERE farmer_id = f.id AND status = 'Approved') as approved_requests,
+           (SELECT COUNT(*) FROM bookings WHERE farmer_id = f.id) as total_bookings
+    FROM farmers f
+    WHERE f.id = ?
+  `;
+
+  db.get(sql, [farmer_id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Farmer not found' });
+
+    // Calculate reliability score
+    const total = row.total_bookings || 0;
+    const completed = row.total_visits || 0;
+    const reliability = total > 0 ? Math.round((completed / total) * 100) : 100;
+
+    res.json({
+      ...row,
+      reliability_score: reliability,
+      avg_waiting_time: "45 min" // Mocked for now as real calculation needs historical tracking
+    });
+  });
+});
+
 app.get('/api/farmer/bookings/:farmer_id', (req, res) => {
   const farmer_id = req.params.farmer_id;
   const sql = `

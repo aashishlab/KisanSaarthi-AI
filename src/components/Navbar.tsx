@@ -3,9 +3,13 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import FarmerProfileDropdown from "./FarmerProfileDropdown";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isFarmer = user?.role === 'farmer';
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -39,9 +43,15 @@ const Navbar = () => {
           <button className="p-2.5 rounded-xl hover:bg-muted transition-colors duration-200">
             <Bell className="h-5 w-5 text-muted-foreground" />
           </button>
-          <button className="p-2.5 rounded-xl hover:bg-muted transition-colors duration-200">
-            <User className="h-5 w-5 text-muted-foreground" />
-          </button>
+          
+          {isFarmer && user.id ? (
+            <FarmerProfileDropdown farmerId={user.id} />
+          ) : (
+            <button className="p-2.5 rounded-xl hover:bg-muted transition-colors duration-200">
+              <User className="h-5 w-5 text-muted-foreground" />
+            </button>
+          )}
+
           <Button 
             variant="outline" 
             onClick={handleLogout}

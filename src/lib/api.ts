@@ -309,6 +309,31 @@ export const updateHubSettings = async (hub_id: number, data: any): Promise<any>
   return res.json();
 };
 
+export interface FarmerProfile {
+  id: number;
+  name: string;
+  phone: string;
+  village: string;
+  vehicle_no: string;
+  crop_type: string;
+  preferred_hub: string;
+  role: string;
+  created_at: string;
+  total_visits: number;
+  last_factory: string | null;
+  last_slot: string | null;
+  pending_requests: number;
+  approved_requests: number;
+  reliability_score: number;
+  avg_waiting_time: string;
+}
+
+export const fetchFarmerProfile = async (id: number): Promise<FarmerProfile> => {
+  const res = await fetch(`${API_URL}/farmer/profile/${id}`);
+  if (!res.ok) throw new Error('Failed to fetch farmer profile');
+  return res.json();
+};
+
 export type ArrivalBooking = Booking;
 
 export const fetchFarmerBookings = async (farmer_id: number): Promise<ArrivalBooking[]> => {
