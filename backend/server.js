@@ -715,4 +715,33 @@ app.put('/api/hubs/:hub_id/settings', (req, res) => {
   });
 });
 
+// --- Chatbot API ---
+app.post('/api/chat', (req, res) => {
+  const { message } = req.body;
+  
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required.' });
+  }
+
+  const userMessage = message.toLowerCase();
+  let reply = "I am KisanSaarthi's AI assistant. How can I help you today?";
+
+  // Simple intent detection for farmer navigation
+  if (userMessage.includes('dashboard') || userMessage.includes('home')) {
+    reply = "Sure! I can help you with your dashboard. Redirecting you to your dashboard now.";
+  } else if (userMessage.includes('hub') || userMessage.includes('nearby')) {
+    reply = "Looking for hub information? I'll show you the nearby hubs and booking options.";
+  } else if (userMessage.includes('queue') || userMessage.includes('waiting') || userMessage.includes('line')) {
+    reply = "I'll take you to the live queue status page so you can check and track your position.";
+  } else if (userMessage.includes('booking') || userMessage.includes('book') || userMessage.includes('slot')) {
+    reply = "Need to book a slot? I'll open the slot booking page for you.";
+  } else if (userMessage.includes('crop') || userMessage.includes('price')) {
+    reply = "I can guide you to your activity section where you can view and find more info about crops and bookings.";
+  } else if (userMessage.includes('help') || userMessage.includes('support')) {
+    reply = "I'm here to help! You can ask me to navigate to the dashboard, book a slot, or check the queue status.";
+  }
+
+  res.json({ reply });
+});
+
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

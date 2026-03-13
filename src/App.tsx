@@ -15,6 +15,7 @@ import RegisterFactory from "./pages/RegisterFactory.tsx";
 import RegisterFarmer from "./pages/RegisterFarmer.tsx";
 import CategoryHubs from "./pages/CategoryHubs.tsx";
 import HubBooking from "./pages/HubBooking.tsx";
+import FarmerChatbot from "./components/FarmerChatbot.tsx";
 
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <FarmerChatbot />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
