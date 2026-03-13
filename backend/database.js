@@ -21,21 +21,35 @@ const db = new sqlite3.Database(dbPath, (err) => {
       else console.log('live_queue table ready.');
     });
 
-    // New bookings table for arrival slot requests
+    // Updated bookings table to match new spec
     db.run(`CREATE TABLE IF NOT EXISTS bookings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       farmer_id INTEGER NOT NULL,
       hub_id INTEGER NOT NULL,
-      status TEXT DEFAULT 'pending', -- pending, approved, rejected
-      token_number TEXT,
-      slot_time TEXT,
-      waiting_time TEXT,
+      slot_id INTEGER,
+      vehicle_no TEXT NOT NULL,
+      token_number INTEGER,
+      status TEXT DEFAULT 'Pending', -- Pending, Approved, In Progress, Completed
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (farmer_id) REFERENCES farmers(id),
-      FOREIGN KEY (hub_id) REFERENCES hubs(id)
+      FOREIGN KEY (hub_id) REFERENCES hubs(id),
+      FOREIGN KEY (slot_id) REFERENCES slots(id)
     )`, (err) => {
       if (err) console.error('Error creating bookings table', err.message);
       else console.log('Bookings table ready.');
+    });
+
+    // New slots table defined by factory
+    db.run(`CREATE TABLE IF NOT EXISTS slots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      hub_id INTEGER NOT NULL,
+      slot_time TEXT NOT NULL,
+      capacity INTEGER NOT NULL,
+      booked_count INTEGER DEFAULT 0,
+      FOREIGN KEY (hub_id) REFERENCES hubs(id)
+    )`, (err) => {
+      if (err) console.error('Error creating slots table', err.message);
+      else console.log('Slots table ready.');
     });
 
     // New requests table (farmer request submissions)

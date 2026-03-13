@@ -3,7 +3,7 @@ import { Bell, Factory, LayoutDashboard, ListTodo, FileText, Settings, LogOut, C
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { fetchFactoryBookings, approveBooking, fetchFactoryHub, ArrivalBooking, Hub } from "@/lib/api";
+import { fetchHubBookings, updateBookingStatusNew, fetchFactoryHub, Booking, Hub } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -68,17 +68,17 @@ const FactoryRequests = () => {
   const hub_id = hub?.id;
 
   // Fetch pending bookings for this hub
-  const { data: bookings = [], isLoading, isError } = useQuery<ArrivalBooking[]>({
+  const { data: bookings = [], isLoading, isError } = useQuery<Booking[]>({
     queryKey: ['factory-bookings', hub_id],
-    queryFn: () => fetchFactoryBookings(hub_id!),
+    queryFn: () => fetchHubBookings(hub_id!),
     enabled: !!hub_id,
     refetchInterval: 5000,
   });
 
   const approveMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number, data: any }) => approveBooking(id, data),
+    mutationFn: ({ id }: { id: number, data?: any }) => updateBookingStatusNew(id, 'Approved'),
     onSuccess: () => {
-      toast.success("✅ Booking approved and slot assigned!");
+      toast.success("✅ Booking approved!");
       setAssigningId(null);
       setApprovalData({ token_number: "", slot_time: "", waiting_time: "" });
       queryClient.invalidateQueries({ queryKey: ['factory-bookings'] });

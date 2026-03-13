@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchHubsByCategory, createBooking } from "@/lib/api";
+import { fetchHubsByCategory } from "@/lib/api";
 import { ArrowLeft, Clock, MapPin, Truck, Factory, AlertCircle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -150,7 +150,7 @@ const CategoryHubs = () => {
                     <div className="p-6 pt-0 bg-transparent">
                       <Button 
                         className="w-full h-14 rounded-2xl gap-3 font-display font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all" 
-                        onClick={async () => {
+                        onClick={() => {
                           const userStr = localStorage.getItem('user');
                           if (!userStr) {
                             toast.error("Please login as a farmer to book a slot.");
@@ -163,12 +163,7 @@ const CategoryHubs = () => {
                             return;
                           }
                           
-                          try {
-                            await createBooking(user.id, hub.id);
-                            toast.success(`Booking request sent for ${hub.name}!`);
-                          } catch (err: any) {
-                            toast.error(err.message || "Failed to book slot.");
-                          }
+                          navigate(`/farmer/hub-booking/${hub.id}`);
                         }}
                       >
                         <Calendar className="h-5 w-5" />

@@ -40,7 +40,7 @@ export const FarmerBookings = () => {
               >
                 {/* Status Indicator */}
                 <div className={`absolute top-0 right-0 px-4 py-1.5 rounded-bl-xl text-[10px] font-bold uppercase tracking-wider ${
-                  booking.status === 'approved' 
+                  booking.status === 'Approved' || booking.status === 'In Progress' || booking.status === 'Completed'
                     ? 'bg-green-500/20 text-green-400 border-l border-b border-green-500/20' 
                     : 'bg-yellow-500/20 text-yellow-400 border-l border-b border-yellow-500/20'
                 }`}>
@@ -58,7 +58,7 @@ export const FarmerBookings = () => {
                     </div>
                   </div>
 
-                  {booking.status === 'approved' ? (
+                  {['Approved', 'In Progress', 'Completed'].includes(booking.status) ? (
                     <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 space-y-3">
                       <div className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
                         <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Token No</span>

@@ -3,7 +3,7 @@ import { Bell, Factory, Truck, Activity, AlertTriangle, Clock, LayoutDashboard, 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { fetchQueue, updateBookingStatus, fetchPendingCount, fetchFactoryHub, QueueData, Booking } from "@/lib/api";
+import { fetchHubBookings, updateBookingStatusNew, fetchPendingCount, fetchFactoryHub, fetchSlots, createSlot, Booking, Slot } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Sidebar = ({ pendingCount, onLogout }: { pendingCount: number, onLogout: () => void }) => (
@@ -88,11 +88,20 @@ const FactoryDashboard = () => {
 
   const hub_id = hub?.id;
 
-  // Fetch queue data from Express backend
-  const { data: queueData, isLoading, isError } = useQuery({
-    queryKey: ['queue'],
-    queryFn: fetchQueue,
-    refetchInterval: 5000 // Poll every 5s for live updates
+  // Fetch bookings data for the new spec
+  const { data: bookings = [], isLoading: loadingBookings, isError: bookingError } = useQuery({
+    queryKey: ['hub-bookings', hub_id],
+    queryFn: () => fetchHubBookings(hub_id!),
+    enabled: !!hub_id,
+    refetchInterval: 5000
+  });
+
+  // Fetch slots data
+  const { data: slots = [], isLoading: loadingSlots } = useQuery({
+    queryKey: ['hub-slots', hub_id],
+    queryFn: () => fetchSlots(hub_id!),
+    enabled: !!hub_id,
+    refetchInterval: 5000
   });
 
   // Fetch pending requests count for sidebar badge
@@ -103,16 +112,25 @@ const FactoryDashboard = () => {
   });
   const pendingCount = pendingCountData?.count ?? 0;
 
+  // Mutation to create a slot
+  const createSlotMutation = useMutation({
+    mutationFn: createSlot,
+    onSuccess: () => {
+      toast.success('Slot created successfully');
+      queryClient.invalidateQueries({ queryKey: ['hub-slots'] });
+    },
+    onError: (error: Error) => toast.error(error.message)
+  });
+
   // Mutation to update booking status
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number, status: string }) => updateBookingStatus(id, status),
-    onSuccess: (data) => {
-      toast.success(data.message || 'Status updated');
-      queryClient.invalidateQueries({ queryKey: ['queue'] });
+    mutationFn: ({ id, status }: { id: number, status: string }) => updateBookingStatusNew(id, status),
+    onSuccess: () => {
+      toast.success('Status updated');
+      queryClient.invalidateQueries({ queryKey: ['hub-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['hub-slots'] });
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update status');
-    }
+    onError: (error: Error) => toast.error(error.message)
   });
 
   const handleUpdateStatus = (id: number, status: string) => {
@@ -125,20 +143,33 @@ const FactoryDashboard = () => {
       case "In Progress": return "bg-green-500/10 text-green-500 border-green-500/20";
       case "Delayed": return "bg-orange-500/10 text-orange-500 border-orange-500/20";
       case "Approved": return "bg-blue-500/10 text-blue-500 border-blue-500/20";
-      case "Mark Unloaded": return "bg-primary/10 text-primary border-primary/20";
+      case "Completed": return "bg-primary/10 text-primary border-primary/20";
       default: return "bg-muted text-muted-foreground border-border";
     }
   };
 
-  if (isLoading) {
+  const [newSlotTime, setNewSlotTime] = useState("");
+  const [newSlotCapacity, setNewSlotCapacity] = useState(10);
+
+  const handleCreateSlot = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hub_id) return;
+    createSlotMutation.mutate({ hub_id, slot_time: newSlotTime, capacity: newSlotCapacity });
+    setNewSlotTime("");
+  };
+
+  if (loadingBookings || loadingSlots) {
     return <div className="min-h-screen bg-background flex items-center justify-center text-foreground font-display text-xl">Loading Dashboard...</div>;
   }
 
-  if (isError) {
+  if (bookingError) {
     return <div className="min-h-screen bg-background flex items-center justify-center text-destructive font-display text-xl">Error loading dashboard data. Ensure backend is running.</div>;
   }
 
-  const { metrics, queue } = queueData || { metrics: { waiting: 0, active: 0, completed: 0 }, queue: [] };
+  const waiting = bookings.filter(b => b.status === 'Pending' || b.status === 'Approved').length;
+  const active = bookings.filter(b => b.status === 'In Progress').length;
+  const completed = bookings.filter(b => b.status === 'Completed').length;
+  const metrics = { waiting, active, completed };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -149,7 +180,7 @@ const FactoryDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight mb-1">Factory Overview</h1>
-            <p className="font-ui text-muted-foreground">Welcome back, Operator. Here's what's happening today.</p>
+            <p className="font-ui text-muted-foreground">Welcome back, Operator. Here's what's happening today at {hub?.name}.</p>
           </div>
           <div className="flex items-center gap-4">
             <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors duration-200">
@@ -157,16 +188,15 @@ const FactoryDashboard = () => {
             </button>
             <div className="flex items-center gap-3 p-1.5 pr-4 rounded-full bg-white/5 border border-white/10">
               <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                OP
+                {user.name?.substring(0, 2).toUpperCase() || "OP"}
               </div>
-              <span className="font-ui text-sm font-medium">Operator 1</span>
+              <span className="font-ui text-sm font-medium">{user.name || "Operator"}</span>
             </div>
           </div>
         </div>
 
         {/* Top Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Card 1: Total Waiting Vehicles */}
           <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Truck className="w-24 h-24" />
@@ -184,13 +214,12 @@ const FactoryDashboard = () => {
             </div>
           </div>
 
-          {/* Card 2: Active Slots */}
           <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Activity className="w-24 h-24" />
             </div>
             <div className="relative z-10 flex items-center gap-4 mb-4">
-              <div className="p-3 bg-green-500/10 rounded-xl text-green-500">
+              <div className="p- green-500/10 rounded-xl text-green-500">
                 <Activity className="h-6 w-6" />
               </div>
               <h3 className="font-ui font-semibold text-muted-foreground uppercase text-xs tracking-wider">
@@ -199,14 +228,10 @@ const FactoryDashboard = () => {
             </div>
             <div className="relative z-10">
               <span className="font-display text-4xl font-bold text-foreground">{metrics.active}</span>
-              <span className="ml-2 text-sm text-muted-foreground">/ 12 available</span>
-            </div>
-            <div className="mt-4 h-1.5 w-full bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-green-500 rounded-full" style={{ width: `${Math.min((metrics.active / 12) * 100, 100)}%` }} />
+              <span className="ml-2 text-sm text-muted-foreground">/ {slots.length} configured</span>
             </div>
           </div>
 
-          {/* Card 3: Today's Unloading Count */}
           <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <CheckCircle2 className="w-24 h-24" />
@@ -224,7 +249,6 @@ const FactoryDashboard = () => {
             </div>
           </div>
 
-          {/* Card 4: Safety Alerts */}
           <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5 relative overflow-hidden group border-l-destructive/50">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-destructive">
               <AlertTriangle className="w-24 h-24" />
@@ -234,83 +258,90 @@ const FactoryDashboard = () => {
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="font-ui font-semibold text-muted-foreground uppercase text-xs tracking-wider">
-                Safety Alerts
+                Risk Factor
               </h3>
             </div>
             <div className="relative z-10">
-              <span className="font-display text-4xl font-bold text-destructive-foreground">{metrics.waiting > 10 ? 1 : 0}</span>
-              <span className="ml-2 text-sm text-muted-foreground">{metrics.waiting > 10 ? "Congestion Risk" : "All Clear"}</span>
+              <span className="font-display text-4xl font-bold text-destructive-foreground">{metrics.waiting > 10 ? "HIGH" : "LOW"}</span>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Table Section (Takes 2 columns) */}
           <div className="lg:col-span-2 space-y-6">
             <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-display text-xl font-bold tracking-tight">Live Queue Management</h3>
-                <Button variant="outline" size="sm" className="h-8 border-white/10" onClick={() => queryClient.invalidateQueries({ queryKey: ['queue'] })}>Refresh</Button>
+                <h3 className="font-display text-xl font-bold tracking-tight">Incoming Bookings (FCFS)</h3>
+                <Button variant="outline" size="sm" className="h-8 border-white/10" onClick={() => queryClient.invalidateQueries({ queryKey: ['hub-bookings'] })}>Refresh</Button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left font-ui">
                   <thead className="text-xs uppercase text-muted-foreground border-b border-white/10">
                     <tr>
+                      <th className="pb-3 font-semibold">TKN</th>
                       <th className="pb-3 font-semibold">Vehicle No.</th>
-                      <th className="pb-3 font-semibold">Farmer Name</th>
-                      <th className="pb-3 font-semibold">Arrival Slot</th>
+                      <th className="pb-3 font-semibold">Farmer</th>
+                      <th className="pb-3 font-semibold">Slot</th>
                       <th className="pb-3 font-semibold">Status</th>
                       <th className="pb-3 text-right font-semibold">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {queue.length === 0 ? (
+                    {bookings.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-muted-foreground">No bookings found in the queue.</td>
+                        <td colSpan={6} className="py-8 text-center text-muted-foreground">No bookings found.</td>
                       </tr>
                     ) : (
-                      queue.map((row) => (
+                      bookings.map((row) => (
                         <tr key={row.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                          <td className="py-4 font-bold text-primary">#{row.token_number}</td>
                           <td className="py-4 font-medium">{row.vehicle_no}</td>
                           <td className="py-4">{row.farmer_name}</td>
-                          <td className="py-4 text-muted-foreground">{row.arrival_slot}</td>
+                          <td className="py-4 text-muted-foreground">{row.slot_time}</td>
                           <td className="py-4">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusColor(row.status)}`}>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusColor(row.status)}`}>
                               {row.status}
                             </span>
                           </td>
                           <td className="py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10"
-                                title="Approve / In Progress"
-                                onClick={() => handleUpdateStatus(row.id, 'In Progress')}
-                                disabled={row.status === 'In Progress' || row.status === 'Mark Unloaded'}
-                              >
-                                <CheckCircle2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-orange-500 hover:text-orange-600 hover:bg-orange-500/10"
-                                title="Delay"
-                                onClick={() => handleUpdateStatus(row.id, 'Delayed')}
-                                disabled={row.status === 'Mark Unloaded'}
-                              >
-                                <Clock className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-primary hover:bg-primary/10"
-                                title="Mark Unloaded"
-                                onClick={() => handleUpdateStatus(row.id, 'Mark Unloaded')}
-                                disabled={row.status === 'Mark Unloaded'}
-                              >
-                                <Truck className="h-4 w-4" />
-                              </Button>
+                              {row.status === 'Pending' && (
+                                <Button
+                                  size="sm"
+                                  className="h-8 bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => handleUpdateStatus(row.id, 'Approved')}
+                                >
+                                  Approve
+                                </Button>
+                              )}
+                              {row.status === 'Approved' && (
+                                <Button
+                                  size="sm"
+                                  className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
+                                  onClick={() => handleUpdateStatus(row.id, 'In Progress')}
+                                >
+                                  Start
+                                </Button>
+                              )}
+                              {row.status === 'In Progress' && (
+                                <Button
+                                  size="sm"
+                                  className="h-8 bg-primary hover:bg-primary/90 text-white"
+                                  onClick={() => handleUpdateStatus(row.id, 'Completed')}
+                                >
+                                  Complete
+                                </Button>
+                              )}
+                              {row.status !== 'Completed' && row.status !== 'Rejected' && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleUpdateStatus(row.id, 'Rejected')}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -321,62 +352,110 @@ const FactoryDashboard = () => {
               </div>
             </div>
 
-            {/* Congestion Chart Panel */}
-            <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5 h-[300px] flex flex-col">
-              <h3 className="font-display text-xl font-bold tracking-tight mb-4">Congestion Forecast</h3>
-              <div className="flex-1 border-2 border-dashed border-white/10 rounded-xl flex items-center justify-center bg-white/5 relative overflow-hidden">
-                {/* Simulated Chart Bars based on waiting queue */}
-                <div className="absolute bottom-0 left-0 w-full flex items-end justify-around px-8 h-4/5">
-                  {[Math.min(30 + metrics.waiting * 5, 100), Math.min(45 + metrics.waiting * 2, 100), 80, 60, 90, 40, 20].map((height, i) => (
-                    <div key={i} className="w-12 bg-primary/20 rounded-t-md relative group hover:bg-primary/40 transition-colors" style={{ height: `${height}%` }}>
-                      {height > 75 && <div className="absolute -top-1 left-1.5 w-9 h-1 bg-destructive rounded-full" />}
-                    </div>
-                  ))}
+            {/* Manage Slots Section */}
+            <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5">
+              <h3 className="font-display text-xl font-bold tracking-tight mb-6 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" /> Manage Hub Slots
+              </h3>
+              
+              <form onSubmit={handleCreateSlot} className="flex flex-wrap gap-4 mb-8 p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-[10px] font-bold uppercase text-muted-foreground mb-1">Slot Time (e.g. 08:00 - 09:00)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. 08:00 AM - 09:00 AM" 
+                    value={newSlotTime}
+                    onChange={(e) => setNewSlotTime(e.target.value)}
+                    required
+                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                  />
                 </div>
-                <p className="text-muted-foreground font-ui relative z-10 bg-background/80 px-4 py-2 rounded-lg backdrop-blur-sm">Congestion Chart Visualization</p>
+                <div className="w-32">
+                  <label className="block text-[10px] font-bold uppercase text-muted-foreground mb-1">Capacity</label>
+                  <input 
+                    type="number" 
+                    value={newSlotCapacity}
+                    onChange={(e) => setNewSlotCapacity(parseInt(e.target.value))}
+                    required
+                    min="1"
+                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" className="h-10 px-6">Add Slot</Button>
+                </div>
+              </form>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {slots.map((slot) => {
+                  const percent = slot.capacity > 0 ? (slot.booked_count / slot.capacity) : 0;
+                  let color = "bg-green-500";
+                  if (percent >= 0.8) color = "bg-red-500";
+                  else if (percent >= 0.4) color = "bg-yellow-500";
+
+                  return (
+                    <div key={slot.id} className="p-4 bg-white/5 border border-white/5 rounded-xl">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-ui font-bold">{slot.slot_time}</span>
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">
+                          {slot.booked_count} / {slot.capacity} Booked
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-1">
+                        <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${Math.min(percent * 100, 100)}%` }} />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>{slot.capacity - slot.booked_count} slots remaining</span>
+                        <span className="font-bold">{Math.round(percent * 100)}% Full</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Right Sidebar panels (Takes 1 column) */}
           <div className="space-y-6">
-            {/* Safety Risk Score */}
             <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5 text-center">
-              <h3 className="font-display text-xl font-bold tracking-tight mb-6 text-left">Safety Risk Score</h3>
+              <h3 className="font-display text-xl font-bold tracking-tight mb-6 text-left">Queue Velocity</h3>
               <div className="relative inline-flex items-center justify-center">
                 <svg className="w-32 h-32 transform -rotate-90">
                   <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-muted opacity-20" />
-                  <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.85" strokeDashoffset={`${351.85 - (Math.min((metrics.waiting * 5) + 30, 95) / 100) * 351.85}`} className={metrics.waiting > 10 ? "text-destructive" : "text-yellow-500"} />
+                  <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.85" strokeDashoffset={`${351.85 - (Math.min((metrics.waiting * 5), 100) / 100) * 351.85}`} className={metrics.waiting > 10 ? "text-destructive" : "text-primary"} />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-display font-bold">{Math.min((metrics.waiting * 5) + 30, 95)}</span>
-                  <span className="text-xs text-muted-foreground uppercase font-semibold">{metrics.waiting > 10 ? 'High' : 'Moderate'}</span>
+                  <span className="text-3xl font-display font-bold">{metrics.waiting}</span>
+                  <span className="text-xs text-muted-foreground uppercase font-semibold">Vehicles</span>
                 </div>
               </div>
               <p className="mt-6 text-sm text-muted-foreground font-ui">
-                {metrics.waiting > 10 ? 'Risk score is elevated due to waiting vehicle congestion.' : 'Operations are currently running normally.'}
+                Average processing time: 10 mins per truck
               </p>
             </div>
 
-            {/* Vehicle Status Summary */}
             <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5">
-              <h3 className="font-display text-xl font-bold tracking-tight mb-4">Status Overview</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-sm font-ui">
-                  <span className="text-muted-foreground flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500" /> Waiting</span>
-                  <span className="font-semibold">{metrics.waiting}</span>
+              <h3 className="font-display text-xl font-bold tracking-tight mb-4">Operations Metrics</h3>
+              <div className="space-y-4">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs text-muted-foreground">Queue Load</span>
+                    <span className="text-xs font-bold">{Math.min(metrics.waiting * 10, 100)}%</span>
+                  </div>
+                  <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${Math.min(metrics.waiting * 10, 100)}%` }} />
+                  </div>
                 </div>
-                <div className="flex justify-between items-center text-sm font-ui">
-                  <span className="text-muted-foreground flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500" /> Unloading (Active)</span>
-                  <span className="font-semibold">{metrics.active}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm font-ui">
-                  <span className="text-muted-foreground flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-primary" /> Completed</span>
-                  <span className="font-semibold">{metrics.completed}</span>
+                <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs text-muted-foreground">Completion Rate</span>
+                    <span className="text-xs font-bold">92%</span>
+                  </div>
+                  <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500" style={{ width: '92%' }} />
+                  </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

@@ -2,12 +2,31 @@ const API_URL = '/api';
 
 export interface Booking {
   id: number;
-  farmer_name: string;
+  farmer_id: number;
+  hub_id: number;
+  slot_id: number;
   vehicle_no: string;
-  hub_name: string;
-  arrival_slot: string;
-  status: string;
+  token_number: number;
+  status: 'Pending' | 'Approved' | 'In Progress' | 'Completed' | 'Rejected';
+  created_at: string;
+  farmer_name?: string;
+  farmer_phone?: string;
+  slot_time?: string;
+  hub_name?: string;
+  hub_location?: string;
+  hub_category?: string;
+  waiting_time?: string;
+  crop_type?: string;
 }
+
+export interface Slot {
+  id: number;
+  hub_id: number;
+  slot_time: string;
+  capacity: number;
+  booked_count: number;
+}
+
 
 export interface QueueData {
   metrics: {
@@ -195,55 +214,57 @@ export const login = async (data: LoginData) => {
   return res.json();
 };
 
-export interface ArrivalBooking {
-  id: number;
-  farmer_id: number;
-  hub_id: number;
-  status: 'pending' | 'approved' | 'rejected';
-  token_number?: string;
-  slot_time?: string;
-  waiting_time?: string;
-  created_at: string;
-  farmer_name?: string; // from join
-  farmer_phone?: string; // from join
-  vehicle_no?: string; // from join
-  crop_type?: string; // from join
-  hub_name?: string; // from join
-  hub_location?: string; // from join
-  hub_category?: string; // from join
-}
-
-export const createBooking = async (farmer_id: number, hub_id: number): Promise<any> => {
-  const res = await fetch(`${API_URL}/bookings`, {
+export const createSlot = async (data: { hub_id: number; slot_time: string; capacity: number }): Promise<any> => {
+  const res = await fetch(`${API_URL}/slots`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ farmer_id, hub_id }),
+    body: JSON.stringify(data),
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to create booking');
-  }
+  if (!res.ok) throw new Error('Failed to create slot');
   return res.json();
 };
 
-export const fetchFactoryBookings = async (hub_id: number): Promise<ArrivalBooking[]> => {
-  const res = await fetch(`${API_URL}/factory/bookings/${hub_id}`);
-  if (!res.ok) throw new Error('Failed to fetch factory bookings');
+export const fetchSlots = async (hub_id: number): Promise<Slot[]> => {
+  const res = await fetch(`${API_URL}/slots?hub_id=${hub_id}`);
+  if (!res.ok) throw new Error('Failed to fetch slots');
   return res.json();
 };
 
-export const approveBooking = async (id: number, data: { token_number: string; slot_time: string; waiting_time: string }): Promise<any> => {
-  const res = await fetch(`${API_URL}/bookings/${id}/approve`, {
-    method: 'PUT',
+export const bookSlotNew = async (data: { farmer_id: number; hub_id: number; slot_id: number; vehicle_number: string }): Promise<any> => {
+  const res = await fetch(`${API_URL}/book-slot`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to approve booking');
+    throw new Error(errorData.error || 'Booking failed');
   }
   return res.json();
 };
+
+export const fetchHubBookings = async (hub_id: number): Promise<Booking[]> => {
+  const res = await fetch(`${API_URL}/bookings?hub_id=${hub_id}`);
+  if (!res.ok) throw new Error('Failed to fetch bookings');
+  return res.json();
+};
+
+export const updateBookingStatusNew = async (id: number, status: string): Promise<any> => {
+  const res = await fetch(`${API_URL}/update-booking-status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, status }),
+  });
+  if (!res.ok) throw new Error('Failed to update status');
+  return res.json();
+};
+export const fetchFactoryHub = async (factory_id: number): Promise<Hub> => {
+  const res = await fetch(`${API_URL}/factory/hub/${factory_id}`);
+  if (!res.ok) throw new Error('Failed to fetch factory hub');
+  return res.json();
+};
+
+export type ArrivalBooking = Booking;
 
 export const fetchFarmerBookings = async (farmer_id: number): Promise<ArrivalBooking[]> => {
   const res = await fetch(`${API_URL}/farmer/bookings/${farmer_id}`);
@@ -251,9 +272,10 @@ export const fetchFarmerBookings = async (farmer_id: number): Promise<ArrivalBoo
   return res.json();
 };
 
-export const fetchFactoryHub = async (factory_id: number): Promise<Hub> => {
-  const res = await fetch(`${API_URL}/factory/hub/${factory_id}`);
-  if (!res.ok) throw new Error('Failed to fetch factory hub');
-  return res.json();
-};
+// Legacy Aliases for backward compatibility
+export const fetchFactoryBookings = fetchHubBookings;
 
+export const approveBooking = async (id: number, data?: any) => {
+  // Map old approval call to new status update
+  return updateBookingStatusNew(id, 'Approved');
+};
