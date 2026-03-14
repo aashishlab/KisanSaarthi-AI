@@ -15,11 +15,8 @@ import RegisterFactory from "./pages/RegisterFactory.tsx";
 import RegisterFarmer from "./pages/RegisterFarmer.tsx";
 import CategoryHubs from "./pages/CategoryHubs.tsx";
 import HubBooking from "./pages/HubBooking.tsx";
-<<<<<<< HEAD
 import HubCategoriesPage from "./pages/HubCategoriesPage.tsx";
-=======
-import FarmerChatbot from "./components/FarmerChatbot.tsx";
->>>>>>> 98dad052d72e1e3f264a711e5fe568dae5ce4a16
+import FarmerChatbot from "./components/ui/chat.tsx";
 
 
 const queryClient = new QueryClient();

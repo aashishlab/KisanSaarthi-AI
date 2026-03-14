@@ -89,5 +89,11 @@
   "slotTime": "સ્લોટ સમય",
   "hubWaitTime": "હબ પ્રતીક્ષા સમય",
   "tons": "ટન",
-  "capacity": "ક્ષમતા"
+  "capacity": "ક્ષમતા",
+  "searchLocation": "સ્થળ શોધો",
+  "searchPlaceholder": "સ્થળ દાખલ કરો (જેમ કે પુણે)",
+  "search": "શોધો",
+  "searchingLocation": "શોધી રહ્યાં છીએ...",
+  "noHubsFound": "આ સ્થળ પાસે કોઈ હબ મળ્યા નહિ.",
+  "away": "દૂર"
 }

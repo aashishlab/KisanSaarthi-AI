@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchHubsByCategory } from "@/lib/api";
@@ -14,7 +15,10 @@ const CategoryHubs = () => {
 
   // Read optional quantity pre-filled by chatbot via URL query param
   const searchParams = new URLSearchParams(location.search);
-  const prefillQuantity = searchParams.get('quantity');
+  const initialQty = parseFloat(searchParams.get('quantity') || '10');
+  const [quantity, setQuantity] = useState<number>(initialQty);
+
+  const TRANSPORT_RATE = 50; // ₹50 per km (example)
 
   const { data: hubs, isLoading, isError } = useQuery({
     queryKey: ['hubs-by-category', category],
@@ -49,6 +53,24 @@ const CategoryHubs = () => {
               <p className="font-ui text-muted-foreground mt-2 max-w-2xl">
                 Real-time queue status and booking for all registered {category?.toLowerCase()} hubs in the KisanSaarthi network.
               </p>
+            </div>
+
+            <div className="glass-strong p-4 rounded-2xl flex items-center gap-4 border border-white/10 shadow-lg">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                  <Truck className="h-3 w-3" /> Crop Quantity (Tons)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="number" 
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseFloat(e.target.value) || 0))}
+                    className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-foreground font-display font-bold text-lg focus:outline-none focus:border-primary/50"
+                  />
+                  <span className="text-muted-foreground font-ui font-medium">tons</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -122,18 +144,48 @@ const CategoryHubs = () => {
                   statusLabel = "Moderate";
                 }
 
+                const pricePerTon = hub.price_per_ton || 0;
+                const totalPrice = pricePerTon * quantity;
+                
+                // For demonstration, we'll use a simulated distance if not available
+                const distance = 10 + (hub.id % 5) * 5; 
+                const transportCost = distance * TRANSPORT_RATE;
+                const netBenefit = totalPrice - transportCost;
+
+                // Find if this is the best price hub
+                const sortedHubs = [...(hubs || [])].sort((a, b) => {
+                  const bPrice = (b.price_per_ton || 0) * quantity - (10 + (b.id % 5) * 5) * TRANSPORT_RATE;
+                  const aPrice = (a.price_per_ton || 0) * quantity - (10 + (a.id % 5) * 5) * TRANSPORT_RATE;
+                  return bPrice - aPrice;
+                });
+                const isBestPrice = sortedHubs[0]?.id === hub.id;
+
                 return (
                   <div 
                     key={hub.id} 
-                    className="glass-strong rounded-3xl overflow-hidden shadow-xl border border-white/5 hover:border-primary/40 hover:scale-[1.02] transition-all duration-300 group flex flex-col h-full bg-gradient-to-b from-white/[0.05] to-transparent"
+                    className={`glass-strong rounded-3xl overflow-hidden shadow-xl border transition-all duration-300 group flex flex-col h-full bg-gradient-to-b from-white/[0.05] to-transparent ${isBestPrice ? 'border-primary/60 ring-1 ring-primary/20' : 'border-white/5 hover:border-primary/40'} hover:scale-[1.02]`}
                   >
                     <div className="p-8 flex-1 flex flex-col">
                       <div className="flex justify-between items-start mb-6">
                         <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            {isBestPrice && (
+                              <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                Best Price
+                              </span>
+                            )}
+                          </div>
                           <h3 className="font-display text-2xl font-bold text-foreground group-hover:text-primary transition-colors leading-tight">{hub.name}</h3>
-                          <div className="flex items-center gap-2 mt-3 text-muted-foreground group-hover:text-muted-foreground/80">
-                            <MapPin className="h-4 w-4 shrink-0" />
-                            <span className="font-ui text-sm font-medium">{hub.location}</span>
+                          <div className="flex items-center gap-4 mt-3">
+                            <div className="flex items-center gap-2 text-muted-foreground group-hover:text-muted-foreground/80">
+                              <MapPin className="h-4 w-4 shrink-0" />
+                              <span className="font-ui text-sm font-medium">{hub.location}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-primary font-bold">
+                              <span className="text-xs">₹</span>
+                              <span className="font-display text-lg">{pricePerTon.toLocaleString()}</span>
+                              <span className="text-[10px] text-muted-foreground font-ui font-medium uppercase tracking-tighter">/ Ton</span>
+                            </div>
                           </div>
                         </div>
                         <div className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${statusBg} ${statusText} border border-current/20 uppercase tracking-wider`}>
@@ -141,7 +193,20 @@ const CategoryHubs = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 mt-auto pt-8">
+                      <div className="bg-primary/5 rounded-2xl p-5 border border-primary/10 mb-6 group-hover:bg-primary/10 transition-colors">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-ui text-muted-foreground flex items-center gap-1.5">
+                            Estimated Earning
+                          </span>
+                          <span className="font-display font-bold text-xl text-primary">₹ {totalPrice.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] text-muted-foreground border-t border-primary/10 pt-2 mt-2">
+                          <span>Net Benefit (after transport)</span>
+                          <span className="font-bold text-foreground">₹ {netBenefit.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mt-auto pt-4">
                         <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center justify-center text-center">
                           <Truck className="h-6 w-6 text-primary/70 mb-2" />
                           <p className="font-display text-3xl font-bold">{hub.total_load || 0}T</p>
@@ -171,11 +236,7 @@ const CategoryHubs = () => {
                             return;
                           }
                           
-                          // Pass quantity pre-fill forward if chatbot sent one
-                          const bookingUrl = prefillQuantity
-                            ? `/farmer/hub-booking/${hub.id}?quantity=${prefillQuantity}`
-                            : `/farmer/hub-booking/${hub.id}`;
-                          navigate(bookingUrl);
+                          navigate(`/farmer/hub-booking/${hub.id}?quantity=${quantity}`);
                         }}
                       >
                         <Calendar className="h-5 w-5" />

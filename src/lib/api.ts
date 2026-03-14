@@ -18,6 +18,7 @@ export interface Booking {
   waiting_time?: string;
   crop_type?: string;
   load_quantity?: number;
+  estimated_price?: number;
 }
 
 export interface Slot {
@@ -61,6 +62,7 @@ export interface Hub {
   break_end: string;
   queue_size: number;
   total_load?: number;
+  price_per_ton?: number;
   created_at: string;
 }
 
@@ -73,6 +75,12 @@ export const fetchQueue = async (): Promise<QueueData> => {
 export const fetchHubsByCategory = async (category: string): Promise<Hub[]> => {
   const res = await fetch(`${API_URL}/hubs?category=${encodeURIComponent(category)}`);
   if (!res.ok) throw new Error('Failed to fetch hubs by category');
+  return res.json();
+};
+
+export const fetchAllHubs = async (): Promise<Hub[]> => {
+  const res = await fetch(`${API_URL}/hubs`);
+  if (!res.ok) throw new Error('Failed to fetch hubs');
   return res.json();
 };
 
@@ -250,6 +258,7 @@ export interface BookingPayload {
   hub_id: number;
   vehicle_number: string;
   total_load: number;
+  estimated_price?: number;
   slots: BookingPayloadSlot[];
 }
 
@@ -306,6 +315,16 @@ export const updateHubSettings = async (hub_id: number, data: any): Promise<any>
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to update hub settings');
+  return res.json();
+};
+
+export const updateHubPrice = async (hub_id: number, price_per_ton: number): Promise<any> => {
+  const res = await fetch(`${API_URL}/hubs/${hub_id}/price`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ price_per_ton }),
+  });
+  if (!res.ok) throw new Error('Failed to update hub price');
   return res.json();
 };
 

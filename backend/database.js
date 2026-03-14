@@ -29,6 +29,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
       slot_id INTEGER,
       vehicle_no TEXT,
       load_quantity REAL DEFAULT 0,
+      estimated_price REAL DEFAULT 0,
       token_number INTEGER,
       status TEXT DEFAULT 'Pending' CHECK(status IN ('Pending', 'Approved', 'In Progress', 'Completed', 'Rejected')),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -116,6 +117,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
       break_start TEXT DEFAULT '12:00',
       break_end TEXT DEFAULT '13:00',
       queue_size INTEGER DEFAULT 0,
+      price_per_ton REAL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (factory_id) REFERENCES users(id)
     )`, (err) => {
@@ -154,8 +156,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
       { table: 'hubs', column: 'break_start', type: "TEXT DEFAULT '12:00'" },
       { table: 'hubs', column: 'break_end', type: "TEXT DEFAULT '13:00'" },
       { table: 'hubs', column: 'capacity_per_slot', type: "REAL DEFAULT 10" },
+      { table: 'hubs', column: 'price_per_ton', type: 'REAL DEFAULT 0' },
       { table: 'slots', column: 'total_booked_load', type: 'REAL DEFAULT 0' },
-      { table: 'bookings', column: 'load_quantity', type: 'REAL DEFAULT 0' }
+      { table: 'bookings', column: 'load_quantity', type: 'REAL DEFAULT 0' },
+      { table: 'bookings', column: 'estimated_price', type: 'REAL DEFAULT 0' }
     ];
 
     migrations.forEach(m => {

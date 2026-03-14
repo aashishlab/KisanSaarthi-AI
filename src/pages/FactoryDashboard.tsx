@@ -3,7 +3,7 @@ import { Bell, Factory, Truck, Activity, AlertTriangle, Clock, LayoutDashboard, 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { fetchHubBookings, updateBookingStatusNew, fetchPendingCount, fetchFactoryHub, fetchSlots, updateHubSettings, Booking, Slot } from "@/lib/api";
+import { fetchHubBookings, updateBookingStatusNew, fetchPendingCount, fetchFactoryHub, fetchSlots, updateHubSettings, updateHubPrice, Booking, Slot } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Sidebar = ({ pendingCount, onLogout }: { pendingCount: number, onLogout: () => void }) => (
@@ -148,6 +148,8 @@ const FactoryDashboard = () => {
     break_end: "13:00"
   });
 
+  const [pricePerTon, setPricePerTon] = useState<number>(0);
+
   useEffect(() => {
     if (hub) {
       setConfig({
@@ -158,6 +160,7 @@ const FactoryDashboard = () => {
         break_start: hub.break_start || "12:00",
         break_end: hub.break_end || "13:00"
       });
+      setPricePerTon(hub.price_per_ton || 0);
     }
   }, [hub]);
 
@@ -174,6 +177,21 @@ const FactoryDashboard = () => {
     e.preventDefault();
     if (!hub_id) return;
     updateSettingsMutation.mutate(config);
+  };
+
+  const updatePriceMutation = useMutation({
+    mutationFn: () => updateHubPrice(hub_id!, pricePerTon),
+    onSuccess: () => {
+      toast.success('Price updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['factory-hub'] });
+    },
+    onError: (error: Error) => toast.error(error.message)
+  });
+
+  const handleUpdatePrice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hub_id) return;
+    updatePriceMutation.mutate();
   };
 
   if (loadingBookings || loadingSlots) {
@@ -375,9 +393,46 @@ const FactoryDashboard = () => {
             {/* Manage Slots Section */}
             <div className="glass-strong rounded-2xl p-6 shadow-md border border-white/5">
               <h3 className="font-display text-xl font-bold tracking-tight mb-6 flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" /> Manage Hub Slots
               </h3>
               
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <form onSubmit={handleUpdatePrice} className="p-6 bg-primary/5 rounded-2xl border border-primary/10 space-y-4">
+                  <h4 className="text-sm font-bold uppercase text-primary tracking-widest flex items-center gap-2 mb-2">
+                    <Activity className="h-4 w-4" /> Price Management
+                  </h4>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Current Price per Ton (₹)</label>
+                    <div className="flex gap-3">
+                      <input 
+                        type="number" 
+                        value={pricePerTon}
+                        onChange={(e) => setPricePerTon(parseFloat(e.target.value) || 0)}
+                        required
+                        className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-lg font-bold text-primary focus:outline-none focus:border-primary transition-colors"
+                      />
+                      <Button type="submit" disabled={updatePriceMutation.isPending} className="h-auto px-6 rounded-xl font-bold bg-primary hover:bg-primary/90">
+                        {updatePriceMutation.isPending ? "Updating..." : "Update Price"}
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    * This price will be visible to farmers immediately for comparison.
+                  </p>
+                </form>
+
+                <div className="p-6 bg-white/5 rounded-2xl border border-white/10 flex flex-col justify-center">
+                   <div className="flex items-center gap-4">
+                     <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                        <Activity className="h-6 w-6" />
+                     </div>
+                     <div>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Active Rate</p>
+                        <p className="text-3xl font-display font-bold text-foreground">₹ {hub?.price_per_ton?.toLocaleString() || 0}</p>
+                     </div>
+                   </div>
+                </div>
+              </div>
+
               <form onSubmit={handleGenerateSlots} className="space-y-6 mb-8 p-6 bg-white/5 rounded-2xl border border-white/10">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">

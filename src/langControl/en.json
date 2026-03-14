@@ -88,5 +88,11 @@
   "slotTime": "Slot Time",
   "hubWaitTime": "Hub Wait Time",
   "tons": "Tons",
-  "capacity": "Capacity"
+  "capacity": "Capacity",
+  "searchLocation": "Search Location",
+  "searchPlaceholder": "Enter location (e.g. Pune)",
+  "search": "Search",
+  "searchingLocation": "Searching...",
+  "noHubsFound": "No hubs found near this location.",
+  "away": "away"
 }

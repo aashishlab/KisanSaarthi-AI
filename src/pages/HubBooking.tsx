@@ -102,6 +102,7 @@ const HubBooking = () => {
         hub_id: parseInt(hubId || '0'),
         vehicle_number,
         total_load: loadQuantity,
+        estimated_price: (hub?.price_per_ton || 0) * loadQuantity,
         slots: allocatedSlotsDetails
       };
 
@@ -228,6 +229,17 @@ const HubBooking = () => {
                     className="w-24 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground font-ui focus:outline-none focus:border-primary/50 transition-colors"
                   />
                 </div>
+                {hub?.price_per_ton ? (
+                  <div className="flex flex-col gap-2 pl-4 border-l border-white/10">
+                    <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+                       Price Benefits
+                    </label>
+                    <div className="flex items-baseline gap-2">
+                       <span className="text-2xl font-display font-bold text-primary">₹ {((hub.price_per_ton || 0) * loadQuantity).toLocaleString()}</span>
+                       <span className="text-[10px] text-muted-foreground font-ui uppercase tracking-tighter">Est. Earning</span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 

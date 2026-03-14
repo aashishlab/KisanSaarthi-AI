@@ -89,5 +89,11 @@
   "slotTime": "स्लॉट समय",
   "hubWaitTime": "हब प्रतीक्षा समय",
   "tons": "टन",
-  "capacity": "क्षमता"
+  "capacity": "क्षमता",
+  "searchLocation": "स्थान खोजें",
+  "searchPlaceholder": "स्थान दर्ज करें (जैसे पुणे)",
+  "search": "खोजें",
+  "searchingLocation": "खोज रहे हैं...",
+  "noHubsFound": "इस स्थान के पास कोई हब नहीं मिला।",
+  "away": "दूर"
 }

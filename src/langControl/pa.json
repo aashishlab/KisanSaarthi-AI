@@ -89,5 +89,11 @@
   "slotTime": "ਸਲਾਟ ਸਮਾਂ",
   "hubWaitTime": "ਹੱਬ ਉਡੀਕ ਸਮਾਂ",
   "tons": "ਟਨ",
-  "capacity": "ਸਮਰੱਥਾ"
+  "capacity": "ਸਮਰੱਥਾ",
+  "searchLocation": "ਸਥਾਨ ਖੋਜੋ",
+  "searchPlaceholder": "ਸਥਾਨ ਦਰਜ ਕਰੋ (ਜਿਵੇਂ ਪੁਣੇ)",
+  "search": "ਖੋਜੋ",
+  "searchingLocation": "ਖੋਜ ਰਹੇ ਹਾਂ...",
+  "noHubsFound": "ਇਸ ਸਥਾਨ ਦੇ ਨੇੜੇ ਕੋਈ ਹੱਬ ਨਹੀਂ ਮਿਲਿਆ।",
+  "away": "ਦੂਰ"
 }

@@ -89,5 +89,11 @@
   "slotTime": "ಸ್ಲಾಟ್ ಸಮಯ",
   "hubWaitTime": "ಹಬ್ ಕಾಯುವ ಸಮಯ",
   "tons": "ಟನ್",
-  "capacity": "ಸಾಮರ್ಥ್ಯ"
+  "capacity": "ಸಾಮರ್ಥ್ಯ",
+  "searchLocation": "ಸ್ಥಳ ಹುಡುಕಿ",
+  "searchPlaceholder": "ಸ್ಥಳ ನಮೂದಿಸಿ (ಉದಾ. ಪುಣೆ)",
+  "search": "ಹುಡುಕಿ",
+  "searchingLocation": "ಹುಡುಕಲಾಗುತ್ತಿದೆ...",
+  "noHubsFound": "ಈ ಸ್ಥಳದ ಬಳಿ ಯಾವುದೇ ಹಬ್‌ಗಳು ಕಂಡುಬಂದಿಲ್ಲ.",
+  "away": "ದೂರ"
 }

@@ -13,7 +13,7 @@ const HeroSection = () => {
       <GLSLHills />
       <FloatingShapes />
       <div className="absolute inset-0 bg-dotted opacity-40 z-[1]" />
-      
+
       {/* Gradient overlay */}
       <div className="absolute inset-0 z-[2]" style={{
         background: "linear-gradient(135deg, hsl(150 10% 97% / 0.7) 0%, hsl(152 68% 96% / 0.5) 100%)"
@@ -26,19 +26,17 @@ const HeroSection = () => {
               {t("aiPoweredLogistics")}
             </span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-display font-bold leading-[0.95] tracking-tight mb-6">
-            {t("smartCropDelivery").split("Farmers")[0]}
-            <br />
-            {t("smartCropDelivery").includes("for") ? "for" : ""}
+            {t("smartCropDelivery").split(" ").slice(0, -1).join(" ")}
             <br />
             <span className="text-primary">{t("smartCropDelivery").split(" ").pop()}</span>
           </h1>
-          
+
           <p className="font-ui text-lg text-muted-foreground max-w-lg mb-10 leading-relaxed">
             {t("heroDescription")}
           </p>
-          
+
           <div className="flex flex-wrap gap-4">
             <Button size="lg" className="font-ui font-semibold text-sm h-13 px-8 rounded-xl shadow-lg shadow-primary/25" onClick={() => navigate("/hub-categories")}>
               {t("bookSlot")}
@@ -76,11 +74,10 @@ const HeroSection = () => {
                   </div>
                   <div className="mt-2.5 h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        hub.status === "low" ? "bg-queue-low w-1/4" :
-                        hub.status === "medium" ? "bg-queue-medium w-1/2" :
-                        "bg-queue-high w-full"
-                      }`}
+                      className={`h-full rounded-full transition-all duration-300 ${hub.status === "low" ? "bg-queue-low w-1/4" :
+                          hub.status === "medium" ? "bg-queue-medium w-1/2" :
+                            "bg-queue-high w-full"
+                        }`}
                     />
                   </div>
                 </div>

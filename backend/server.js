@@ -203,7 +203,25 @@ app.get('/api/hubs', (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
+    // Ensure price_per_ton is returned (already in h.*)
     res.json(rows);
+  });
+});
+
+// API Route: Update hub price (from factory dashboard)
+app.put('/api/hubs/:hub_id/price', (req, res) => {
+  const { hub_id } = req.params;
+  const { price_per_ton } = req.body;
+
+  if (price_per_ton == null) {
+    return res.status(400).json({ error: 'Price per ton is required.' });
+  }
+
+  const sql = `UPDATE hubs SET price_per_ton = ? WHERE id = ?`;
+  db.run(sql, [parseFloat(price_per_ton), hub_id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Hub not found.' });
+    res.json({ message: 'Price updated successfully', price_per_ton });
   });
 });
 
@@ -226,6 +244,50 @@ app.get('/api/hubs/category-counts', (req, res) => {
       counts[r.category] = r.count;
     });
     res.json(counts);
+  });
+});
+
+// GET /api/hubs/nearby - Get hubs sorted by distance from given coordinates
+app.get('/api/hubs/nearby', (req, res) => {
+  const lat = parseFloat(req.query.lat);
+  const lng = parseFloat(req.query.lng);
+
+  if (isNaN(lat) || isNaN(lng)) {
+    return res.status(400).json({ error: 'Valid lat and lng query parameters are required.' });
+  }
+
+  // Haversine formula — returns distance in km
+  const haversine = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const sql = `
+    SELECT h.*,
+           (SELECT SUM(load_quantity) FROM bookings b WHERE b.hub_id = h.id AND b.status IN ('Pending', 'Approved', 'In Progress')) as total_load
+    FROM hubs h
+  `;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const hubsWithDistance = rows
+      .filter(hub => hub.latitude != null && hub.longitude != null)
+      .map(hub => ({
+        ...hub,
+        distance_km: parseFloat(haversine(lat, lng, hub.latitude, hub.longitude).toFixed(1))
+      }))
+      .sort((a, b) => a.distance_km - b.distance_km);
+
+    res.json(hubsWithDistance);
   });
 });
 
@@ -398,7 +460,7 @@ app.get('/api/slots', (req, res) => {
 
 // 3. POST /api/book-slot - Farmer books arrival slot(s) with multi-slot support
 app.post('/api/book-slot', (req, res) => {
-  const { farmer_id, hub_id, vehicle_number, total_load, slots } = req.body;
+  const { farmer_id, hub_id, vehicle_number, total_load, estimated_price, slots } = req.body;
   if (!farmer_id || !hub_id || !vehicle_number || !total_load || !slots || !slots.length) {
     return res.status(400).json({ error: 'All fields including valid slots are required.' });
   }
@@ -433,13 +495,13 @@ app.post('/api/book-slot', (req, res) => {
 
     db.serialize(() => {
       // Create the main booking
-      const insertBooking = `INSERT INTO bookings (farmer_id, hub_id, slot_id, vehicle_no, load_quantity, token_number, status)
-                             VALUES (?, ?, ?, ?, ?, ?, 'Pending')`;
+      const insertBooking = `INSERT INTO bookings (farmer_id, hub_id, slot_id, vehicle_no, load_quantity, estimated_price, token_number, status)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')`;
       
       // We use the first slot_id as the primary reference for the booking table, though it spans multiple
       const primary_slot_id = slots[0].slot_id;
 
-      db.run(insertBooking, [farmer_id, hub_id, primary_slot_id, vehicle_number, total_load, newToken], function (err) {
+      db.run(insertBooking, [farmer_id, hub_id, primary_slot_id, vehicle_number, total_load, estimated_price || 0, newToken], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         const bookingId = this.lastID;
 
